@@ -51,14 +51,14 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
         // BARIS 5: Header Kolom
         $this->data[] = [
             'No.',
-            'Nama Pengguna',
+            'Nama',
             'Email',
             'Aula',
-            'Tanggal Booking',
+            'Tanggal',
             'Sesi Waktu',
             'Penanggung Jawab',
             'Keperluan',
-            'Jumlah Peserta',
+            'Peserta',
             'Status',
         ];
 
@@ -96,7 +96,7 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
         }
     }
 
-    private function formatTanggal($value): string
+    private function formatTanggal(mixed $value): string
     {
         if (empty($value)) {
             return '-';
@@ -121,16 +121,16 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
     public function columnWidths(): array
     {
         return [
-            'A' => 6,
-            'B' => 24,
-            'C' => 30,
-            'D' => 24,
-            'E' => 18,
-            'F' => 18,
-            'G' => 26,
-            'H' => 42,
-            'I' => 14,
-            'J' => 14,
+            'A' => 8,  // No
+            'B' => 28, // Nama Pengguna
+            'C' => 35, // Email
+            'D' => 28, // Aula
+            'E' => 18, // Tanggal
+            'F' => 22, // Sesi Waktu
+            'G' => 30, // Penanggung Jawab
+            'H' => 50, // Keperluan
+            'I' => 15, // Peserta
+            'J' => 18, // Status
         ];
     }
 
@@ -162,7 +162,7 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
                 ],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4F46E5'],
+                    'startColor' => ['rgb' => '0d9488'], // Warna Teal senada dengan navbar
                 ],
                 'borders' => [
                     'allBorders' => ['borderStyle' => Border::BORDER_THIN],
@@ -186,7 +186,7 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
                 // ⭐ WRAPTEXT GLOBAL
                 $sheet->getStyle("A1:J{$highestRow}")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
-                    ->setVertical(Alignment::VERTICAL_TOP)
+                    ->setVertical(Alignment::VERTICAL_CENTER)
                     ->setWrapText(true)
                     ->setShrinkToFit(false);
 
@@ -223,8 +223,8 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
                 // ⭐ ROW HEIGHTS
                 $sheet->getRowDimension(1)->setRowHeight(34);
                 $sheet->getRowDimension(2)->setRowHeight(20);
-                $sheet->getRowDimension(3)->setRowHeight(8);  // spacer kecil
-                $sheet->getRowDimension(4)->setRowHeight(8);  // spacer kecil
+                $sheet->getRowDimension(3)->setRowHeight(8);
+                $sheet->getRowDimension(4)->setRowHeight(8);
                 $sheet->getRowDimension($this->headerRow)->setRowHeight(40);
 
                 // ⭐ STYLE DATA ROWS
@@ -245,26 +245,29 @@ class BookingExport implements FromArray, WithColumnWidths, WithEvents, WithStyl
                     $sheet->getStyle("E{$row}:F{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("I{$row}:J{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                    // Auto row height
+                    // 🔥 AUTO ROW HEIGHT YANG LEBIH PINTAR (TANPA BATAS MAKSIMAL)
                     $nameLen = mb_strlen((string) $sheet->getCell("B{$row}")->getValue());
                     $emailLen = mb_strlen((string) $sheet->getCell("C{$row}")->getValue());
                     $aulaLen = mb_strlen((string) $sheet->getCell("D{$row}")->getValue());
                     $pjLen = mb_strlen((string) $sheet->getCell("G{$row}")->getValue());
                     $keperluanLen = mb_strlen((string) $sheet->getCell("H{$row}")->getValue());
 
+                    // Estimasi jumlah baris baru per kolom
                     $estLines = max(
                         1,
-                        (int) ceil($nameLen / 24),
-                        (int) ceil($emailLen / 30),
-                        (int) ceil($aulaLen / 24),
-                        (int) ceil($pjLen / 26),
-                        (int) ceil($keperluanLen / 42)
+                        (int) ceil($nameLen / 25),      // Lebar B: 28
+                        (int) ceil($emailLen / 30),     // Lebar C: 35
+                        (int) ceil($aulaLen / 25),      // Lebar D: 28
+                        (int) ceil($pjLen / 28),        // Lebar G: 30
+                        (int) ceil($keperluanLen / 45)  // Lebar H: 50
                     );
-                    $sheet->getRowDimension($row)->setRowHeight(max(24, min(90, $estLines * 16)));
+                    
+                    // Set tinggi baris tanpa batas maksimal
+                    $sheet->getRowDimension($row)->setRowHeight(max(24, $estLines * 18));
                 }
 
-                // ⭐ FREEZE PANE di bawah header
-                $sheet->freezePane("A{$this->firstDataRow}");
+                // ❌ BAGIAN FREEZE PANE SUDAH DIHAPUS TOTAL
+                // $sheet->freezePane("A{$this->firstDataRow}");
 
                 // ⭐ PAGE SETUP
                 $sheet->getPageSetup()->setOrientation('landscape');

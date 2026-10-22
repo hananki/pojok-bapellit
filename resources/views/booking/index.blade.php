@@ -107,6 +107,25 @@
     body:has(.booking-aula-page) nav .md\:hidden a { color: #1f2937 !important; }
     body:has(.booking-aula-page) nav .md\:hidden a:hover { color: #4f46e5 !important; }
 
+    /* Dark Mode overrides untuk dropdown di booking aula */
+    html.dark body:has(.booking-aula-page) nav .absolute,
+    html.dark body:has(.booking-aula-page) nav .absolute a,
+    html.dark body:has(.booking-aula-page) nav .absolute button,
+    html.dark body:has(.booking-aula-page) nav .absolute span,
+    html.dark body:has(.booking-aula-page) nav .absolute p {
+        color: #f1f5f9 !important;
+    }
+    html.dark body:has(.booking-aula-page) nav .absolute a:hover,
+    html.dark body:has(.booking-aula-page) nav .absolute button:hover {
+        color: #2dd4bf !important;
+    }
+    html.dark body:has(.booking-aula-page) nav .absolute .text-gray-900,
+    html.dark body:has(.booking-aula-page) nav .absolute .text-gray-800 { color: #ffffff !important; }
+    html.dark body:has(.booking-aula-page) nav .absolute .text-gray-700,
+    html.dark body:has(.booking-aula-page) nav .absolute .text-gray-600 { color: #cbd5e1 !important; }
+    html.dark body:has(.booking-aula-page) nav .absolute .text-gray-500 { color: #94a3b8 !important; }
+    html.dark body:has(.booking-aula-page) nav .md\:hidden a { color: #f1f5f9 !important; }
+
     body:has(.booking-aula-page) nav::after { display: none !important; }
 
 

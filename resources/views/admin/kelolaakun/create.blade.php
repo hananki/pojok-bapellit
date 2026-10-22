@@ -186,9 +186,12 @@
                         </label>
                         <select name="role" 
                                 class="w-full border border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3.5 text-base">
-                            <option value="">-- Pilih Role --</option>
-                            <option value="admin" {{ old('role', $user->role ?? '') == 'admin' ? 'selected' : '' }}>Admin</option>
-                            <option value="user"  {{ old('role', $user->role ?? '') == 'user'  ? 'selected' : '' }}>User</option>
+                            <option value="" disabled {{ old('role', $user->role ?? '') == '' ? 'selected' : '' }}>-- Pilih Role --</option>
+                            <option value="user" {{ old('role', $user->role ?? '') == 'user' ? 'selected' : '' }}>User / Pegawai</option>
+                            <option value="pengelola_surat" {{ old('role', $user->role ?? '') == 'pengelola_surat' ? 'selected' : '' }}>Pengelola Surat</option>
+                            <option value="pengelola_aula" {{ old('role', $user->role ?? '') == 'pengelola_aula' ? 'selected' : '' }}>Pengelola Aula (Booking)</option>
+                            <option value="pengelola_absensi" {{ old('role', $user->role ?? '') == 'pengelola_absensi' ? 'selected' : '' }}>Pengelola Absensi</option>
+                            <option value="admin" {{ old('role', $user->role ?? '') == 'admin' ? 'selected' : '' }}>Admin (Akses Penuh)</option>
                         </select>
                         @error('role') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                     </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -61,23 +62,22 @@ class UserController extends Controller
             ->orderBy('jabatan')
             ->pluck('jabatan');
 
-        // ⭐ Ambil daftar bidang unik untuk dropdown filter (opsional)
+        // Ambil daftar bidang unik untuk dropdown filter
         $bidangList = User::whereNotNull('bidang')
             ->where('bidang', '!=', '')
             ->distinct()
             ->orderBy('bidang')
             ->pluck('bidang');
 
-        // ⭐ Kirim SEMUA variabel yang dibutuhkan view
         return view('admin.kelolaakun.index', compact(
             'users',
             'search',
-            'filterBidang',      // ⭐ BARU
-            'filterJabatan',     // ⭐ BARU
+            'filterBidang',
+            'filterJabatan',
             'filterRole',
             'filterStatus',
             'jabatanList',
-            'bidangList'         // ⭐ BARU
+            'bidangList'
         ));
     }
 
@@ -116,7 +116,7 @@ class UserController extends Controller
             'whatsapp' => 'nullable|string|max:20',
             'jabatan' => 'nullable|string|max:255',
             'golongan' => 'nullable|string|max:50',
-            'role' => 'required|string',
+            'role' => ['required', 'string', Rule::in(['user', 'admin', 'pengelola_surat', 'pengelola_aula', 'pengelola_absensi'])],
             'bidang' => 'nullable|string|max:255',
             'status' => 'required|in:aktif,nonaktif',
             'password' => 'nullable|string|min:8|confirmed',
@@ -134,6 +134,7 @@ class UserController extends Controller
             'bidang' => $validated['bidang'] ?? null,
             'status' => $validated['status'],
             'password' => ! empty($validated['password']) ? $validated['password'] : null,
+            // Jika role adalah admin, set is_admin = true
             'is_admin' => $validated['role'] === 'admin',
         ]);
 
@@ -171,7 +172,7 @@ class UserController extends Controller
             'whatsapp' => 'nullable|string|max:20',
             'jabatan' => 'nullable|string|max:255',
             'golongan' => 'nullable|string|max:50',
-            'role' => 'required|string',
+            'role' => ['required', 'string', Rule::in(['user', 'admin', 'pengelola_surat', 'pengelola_aula', 'pengelola_absensi'])],
             'bidang' => 'nullable|string|max:255',
             'status' => 'required|in:aktif,nonaktif',
             'password' => 'nullable|string|min:8|confirmed',
@@ -187,6 +188,7 @@ class UserController extends Controller
         $user->role = $validated['role'];
         $user->bidang = $validated['bidang'] ?? null;
         $user->status = $validated['status'];
+        // Jika role adalah admin, set is_admin = true
         $user->is_admin = $validated['role'] === 'admin';
 
         // Update password hanya kalau diisi

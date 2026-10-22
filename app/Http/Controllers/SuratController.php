@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Events\SuratSubmitted;
+use App\Exceptions\NomorSuratConflictException;
 use App\Http\Requests\StoreSuratRequest;
 use App\Http\Requests\UpdateSuratRequest;
 use App\Models\PengaturanSurat;
 use App\Models\Surat;
 use App\Services\FileStorageService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class SuratController extends Controller
@@ -57,39 +60,107 @@ class SuratController extends Controller
     }
 
     /**
-     * Simpan pengajuan baru + assign nomor + increment counter
+     * Simpan pengajuan baru + assign nomor + increment counter dengan concurrency lock
      */
     public function store(StoreSuratRequest $request)
     {
+        $uploadedFilePath = null;
+        $nomorSurat = null;
+
         try {
-            $pengaturan = PengaturanSurat::getSetting();
-            $nomorSurat = $pengaturan->generateNomor(1);
+            $surat = DB::transaction(function () use ($request, &$uploadedFilePath, &$nomorSurat) {
+                // Lock baris pengaturan_surats secara eksklusif (FOR UPDATE)
+                // Memastikan antrean request concurrent sehingga tidak ada 2 user mengambil nomor yang sama
+                $pengaturan = PengaturanSurat::where('id', 1)->lockForUpdate()->first();
+                if (! $pengaturan) {
+                    $pengaturan = PengaturanSurat::getSetting();
+                    $pengaturan = PengaturanSurat::where('id', $pengaturan->id)->lockForUpdate()->first();
+                }
 
-            $fileData = FileStorageService::storeDocument($request->file('file_surat'), 'uploads/surat');
+                $nomorSekarang = $pengaturan->generateNomor(1);
+                $expectedNomor = trim((string) $request->input('no_surat_hidden'));
 
-            $surat = Surat::create([
-                'user_id' => Auth::id(),
-                'no_surat' => $nomorSurat,
-                'jenis_surat' => $request->input('jenis_surat'),
-                'sifat_surat' => $request->input('sifat_surat'),
-                'tanggal' => $request->input('tanggal', now()),
-                'no_indek' => $request->input('no_indek'),
-                'alamat_tujuan' => $request->input('alamat_tujuan'),
-                'isi_surat' => $request->input('isi_surat'),
-                'keterangan' => $request->input('keterangan'),
-                'file_surat' => $fileData['path'],
-                'file_surat_original_name' => $fileData['original_name'],
-            ]);
+                // Jika nomor yang ditampilkan di layar user sudah berbeda dengan nomor sah berikutnya
+                // (artinya ada user lain yang sudah mengklik simpan lebih dulu)
+                if (! empty($expectedNomor) && $expectedNomor !== $nomorSekarang) {
+                    throw new NomorSuratConflictException(
+                        "Nomor surat '{$expectedNomor}' sudah diambil oleh pengguna lain yang menyimpan lebih dulu. Silakan muat ulang halaman untuk mendapatkan nomor baru."
+                    );
+                }
 
-            // Increment counter HANYA setelah sukses create
-            $pengaturan->incrementCounter(1);
+                // Cek apakah nomor tersebut sudah pernah tercatat di database
+                if (Surat::where('no_surat', $nomorSekarang)->exists()) {
+                    throw new NomorSuratConflictException(
+                        "Nomor surat '{$nomorSekarang}' sudah terdaftar dalam sistem. Silakan muat ulang halaman untuk mendapatkan nomor berikutnya."
+                    );
+                }
+
+                // ==========================================
+                // PENANGANAN FILE (OPSIONAL)
+                // ==========================================
+                $fileData = null;
+                if ($request->hasFile('file_surat')) {
+                    // Upload file dokumen setelah validasi nomor aman
+                    $fileData = FileStorageService::storeDocument($request->file('file_surat'), 'uploads/surat');
+                    $uploadedFilePath = $fileData['path'];
+                }
+
+                $surat = Surat::create([
+                    'user_id' => Auth::id(),
+                    'no_surat' => $nomorSekarang,
+                    'jenis_surat' => $request->input('jenis_surat'),
+                    'sifat_surat' => $request->input('sifat_surat'),
+                    'tanggal' => $request->input('tanggal', now()),
+                    'no_indek' => $request->input('no_indek'),
+                    'alamat_tujuan' => $request->input('alamat_tujuan'),
+                    'isi_surat' => $request->input('isi_surat'),
+                    'keterangan' => $request->input('keterangan'),
+                    'file_surat' => $fileData ? $fileData['path'] : null,
+                    'file_surat_original_name' => $fileData ? $fileData['original_name'] : null,
+                ]);
+
+                // Increment counter HANYA setelah record surat berhasil dibuat
+                $pengaturan->incrementCounter(1);
+
+                $nomorSurat = $nomorSekarang;
+
+                return $surat;
+            });
 
             broadcast(new SuratSubmitted($surat));
 
             return redirect()->route('surat.index')
                 ->with('success', 'Surat berhasil diambil! Nomor surat Anda: '.$nomorSurat);
 
+        } catch (NomorSuratConflictException $e) {
+            if ($uploadedFilePath && Storage::disk('public')->exists($uploadedFilePath)) {
+                Storage::disk('public')->delete($uploadedFilePath);
+            }
+
+            return redirect()->back()
+                ->with('error', $e->getMessage())
+                ->withInput();
+
+        } catch (QueryException $e) {
+            if ($uploadedFilePath && Storage::disk('public')->exists($uploadedFilePath)) {
+                Storage::disk('public')->delete($uploadedFilePath);
+            }
+
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] === 1062) {
+                return redirect()->back()
+                    ->with('error', 'Nomor surat sudah diambil oleh pengguna lain yang menyimpan pada saat bersamaan. Silakan coba kembali untuk mendapatkan nomor terbaru.')
+                    ->withInput();
+            }
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan basis data: '.$e->getMessage())
+                ->withInput();
+
         } catch (\Exception $e) {
+            if ($uploadedFilePath && Storage::disk('public')->exists($uploadedFilePath)) {
+                Storage::disk('public')->delete($uploadedFilePath);
+            }
+
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan: '.$e->getMessage())
                 ->withInput();
@@ -138,9 +209,8 @@ class SuratController extends Controller
      */
     public function download(int $id)
     {
-        // Izinkan download jika user adalah pemilik ATAU admin (opsional, sesuaikan kebijakan)
-        // Untuk keamanan dasar, kita cek kepemilikan dulu
-        $surat = Surat::where('user_id', Auth::id())->findOrFail($id);
+        // Izinkan download untuk semua user yang login
+        $surat = Surat::findOrFail($id);
 
         if (! $surat->file_surat || ! Storage::disk('public')->exists($surat->file_surat)) {
             return redirect()->back()->with('error', 'File tidak tersedia.');

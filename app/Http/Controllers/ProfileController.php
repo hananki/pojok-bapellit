@@ -16,8 +16,15 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        // Menentukan layout berdasarkan role agar tampilannya konsisten
+        $user = $request->user();
+        $currentRole = $user->role ?? 'user';
+        $isPanelUser = in_array($currentRole, ['admin', 'pengelola_surat', 'pengelola_aula', 'pengelola_absensi']);
+        $layout = $isPanelUser ? 'layouts.admin' : 'layouts.user';
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'layout' => $layout, // Mengirim variabel layout ke view
         ]);
     }
 

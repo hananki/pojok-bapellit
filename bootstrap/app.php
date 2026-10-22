@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CekStatusAktif;
+use App\Http\Middleware\RoleMiddleware; // <-- Pastikan ini ada
 use App\Http\Middleware\TrackLoginDevice;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'cek.status' => CekStatusAktif::class,
             'admin' => AdminMiddleware::class,
+            'role' => RoleMiddleware::class, // <-- Pastikan ini ada
         ]);
 
         $middleware->append(TrackLoginDevice::class);

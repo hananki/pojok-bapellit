@@ -15,11 +15,19 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
-    // Set cookie buat skip ngrok warning page
-    document.cookie = "ngrok-skip-browser-warning=true; path=/; max-age=31536000; SameSite=Lax";
-</script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+        // Set cookie buat skip ngrok warning page
+        document.cookie = "ngrok-skip-browser-warning=true; path=/; max-age=31536000; SameSite=Lax";
+    </script>
 </head>
-<body class="font-sans antialiased bg-gray-100">
+<body class="font-sans antialiased bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
     <div class="min-h-screen">
         <!-- Navbar default buat guest -->
         <nav class="bg-white border-b border-gray-200 shadow-sm">

@@ -22,33 +22,49 @@ class SuratSubmitted implements ShouldBroadcastNow
         // ⭐ OPTIMASI: Load relasi user di awal
         $this->surat->loadMissing('user');
 
-        // Simpan notif ke database SEMUA ADMIN
+        // Simpan notif ke database untuk Admin DAN Pengelola Surat
         try {
-            // ⭐ OPTIMASI: Gunakan cache untuk daftar ID admin (sama seperti BookingCreated)
-            $adminIds = Cache::remember('admin_user_ids', 3600, function () {
-                return User::where('role', 'admin')
-                    ->orWhere('is_admin', true)
+            // ⭐ Gunakan cache untuk daftar ID penerima (Admin & Pengelola Surat)
+            $penerimaIds = Cache::remember('surat_notif_user_ids', 3600, function () {
+                return User::whereIn('role', ['admin', 'pengelola_surat'])
+                    ->orWhere('is_admin', true) // Jaga-jaga untuk user lama
                     ->pluck('id')
                     ->toArray();
             });
 
-            foreach ($adminIds as $adminId) {
-                $admin = User::find($adminId);
-                if ($admin) {
-                    $admin->sendNotification(
-                        'surat',
-                        'Pengajuan Surat Baru',
-                        "{$this->surat->no_surat} dari {$this->surat->user?->name}",
-                        [
-                            'surat_id' => $this->surat->id,
-                            'no_surat' => $this->surat->no_surat,
-                            'pengaju' => $this->surat->user?->name,
-                            'jenis' => $this->surat->jenis_surat,
-                            'created_at' => $this->surat->created_at,
-                        ],
-                        route('admin.kelolasurat.index')
-                    );
-                }
+            // Ambil semua user penerima sekaligus (lebih efisien daripada find di dalam loop)
+            $penerima = User::whereIn('id', $penerimaIds)->get();
+
+            foreach ($penerima as $user) {
+                $user->sendNotification(
+                    'surat',
+                    'Pengajuan Surat Baru',
+                    "{$this->surat->no_surat} dari {$this->surat->user?->name}",
+                    [
+                        'surat_id' => $this->surat->id,
+                        'no_surat' => $this->surat->no_surat,
+                        'pengaju' => $this->surat->user?->name,
+                        'jenis' => $this->surat->jenis_surat,
+                        'created_at' => $this->surat->created_at,
+                    ],
+                    route('admin.kelolasurat.index')
+                );
+            }
+
+            // Notif konfirmasi ke user pengaju
+            if ($this->surat->user) {
+                $this->surat->user->sendNotification(
+                    'surat',
+                    'Pengajuan Surat Berhasil',
+                    "Surat {$this->surat->no_surat} ({$this->surat->jenis_surat}) berhasil diajukan.",
+                    [
+                        'surat_id' => $this->surat->id,
+                        'no_surat' => $this->surat->no_surat,
+                        'jenis' => $this->surat->jenis_surat,
+                        'created_at' => $this->surat->created_at,
+                    ],
+                    route('surat.index')
+                );
             }
         } catch (\Exception $e) {
             Log::warning('Gagal simpan notif surat: '.$e->getMessage());
@@ -57,6 +73,8 @@ class SuratSubmitted implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
+        // Tetap gunakan channel admin, karena broadcast real-time 
+        // akan difilter lagi di frontend berdasarkan role
         return [new PrivateChannel('admin.notifications')];
     }
 

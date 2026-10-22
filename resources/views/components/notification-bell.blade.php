@@ -6,7 +6,7 @@
     {{-- Tombol Bell --}}
     <button @click="toggle()"
             type="button"
-            class="relative p-2 text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-full focus:outline-none transition-colors"
+            class="relative p-2 text-white/80 hover:text-white hover:bg-black/10 rounded-full focus:outline-none transition-colors"
             title="Notifikasi">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -114,9 +114,10 @@
                                 <div class="flex items-start gap-3">
                                     <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
                                          :class="{
-                                             'bg-blue-100 text-blue-600': n.type === 'booking',
-                                             'bg-green-100 text-green-600': n.type === 'surat',
-                                             'bg-gray-100 text-gray-600': !['booking','surat'].includes(n.type)
+                                             'bg-indigo-100 text-indigo-600': n.type === 'booking',
+                                             'bg-amber-100 text-amber-600': n.type === 'surat',
+                                             'bg-pink-100 text-pink-600': n.type === 'absensi',
+                                             'bg-gray-100 text-gray-600': !['booking','surat','absensi'].includes(n.type)
                                          }">
                                         <svg x-show="n.type === 'booking'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -124,7 +125,10 @@
                                         <svg x-show="n.type === 'surat'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                         </svg>
-                                        <svg x-show="!['booking','surat'].includes(n.type)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg x-show="n.type === 'absensi'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <svg x-show="!['booking','surat','absensi'].includes(n.type)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                                         </svg>
                                     </div>
@@ -225,9 +229,10 @@
                                 <div class="flex items-start gap-3">
                                     <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
                                          :class="{
-                                             'bg-blue-100 text-blue-600': n.type === 'booking',
-                                             'bg-green-100 text-green-600': n.type === 'surat',
-                                             'bg-gray-100 text-gray-600': !['booking','surat'].includes(n.type)
+                                             'bg-indigo-100 text-indigo-600': n.type === 'booking',
+                                             'bg-amber-100 text-amber-600': n.type === 'surat',
+                                             'bg-pink-100 text-pink-600': n.type === 'absensi',
+                                             'bg-gray-100 text-gray-600': !['booking','surat','absensi'].includes(n.type)
                                          }">
                                         <svg x-show="n.type === 'booking'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -235,7 +240,10 @@
                                         <svg x-show="n.type === 'surat'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                         </svg>
-                                        <svg x-show="!['booking','surat'].includes(n.type)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg x-show="n.type === 'absensi'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <svg x-show="!['booking','surat','absensi'].includes(n.type)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                                         </svg>
                                     </div>
@@ -313,10 +321,22 @@ function notifBell() {
 
                 // 🔊 CUMA DI SINI suara dibunyikan — kecuali tipe yang di-silent
                 onNotification: (notif) => {
+                    // 🛡️ LAPIS PENGAMAN: Abaikan jika tipe notif bukan hak role ini
+                    const role = window.authUserRole || 'user';
+                    const type = notif.type || '';
+                    
+                    if (role !== 'admin') {
+                        if (role === 'pengelola_surat' && type !== 'surat') return;
+                        if (role === 'pengelola_aula' && type !== 'booking') return;
+                        if (role === 'pengelola_absensi' && type !== 'absensi') return;
+                    }
+                    if (role === 'user' && !['booking', 'surat', 'absensi'].includes(type)) return;
+
+                    // --- Jika lolos filter, jalankan seperti biasa ---
                     console.log('🔔 Notif SSE masuk:', notif);
                     this.notifications.unshift(notif);
                     this.unreadCount++;
-                    // jangan bunyi untuk notif blokir sesi (biar nggak ganggu)
+                    
                     const silentTypes = ['session_banned'];
                     if (!silentTypes.includes(notif.type)) {
                         this.playSound();
@@ -473,7 +493,7 @@ function notifBell() {
 
         showToast(notif) {
             if (!window.Swal) return;
-            const icon = { booking: 'info', surat: 'success' }[notif.type] || 'info';
+            const icon = { booking: 'info', surat: 'success', absensi: 'info' }[notif.type] || 'info';
             Swal.fire({
                 toast: true,
                 position: 'top-end',

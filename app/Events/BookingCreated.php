@@ -21,35 +21,48 @@ class BookingCreated implements ShouldBroadcastNow
         // ⭐ OPTIMASI: Load relasi sekali di awal untuk menghindari N+1 di dalam loop
         $this->booking->loadMissing(['user', 'aula']);
 
-        // Simpan notif ke database SEMUA ADMIN
+        // Simpan notif ke database untuk Admin DAN Pengelola Aula
         try {
-            // ⭐ OPTIMASI: Cache daftar ID admin selama 1 jam agar tidak query user terus-menerus
-            $adminIds = Cache::remember('admin_user_ids', 3600, function () {
-                return User::where('role', 'admin')
-                    ->orWhere('is_admin', true)
+            // ⭐ Cache daftar ID penerima (Admin & Pengelola Aula)
+            $penerimaIds = Cache::remember('booking_notif_user_ids', 3600, function () {
+                return User::whereIn('role', ['admin', 'pengelola_aula'])
+                    ->orWhere('is_admin', true) // Jaga-jaga untuk user lama
                     ->pluck('id')
                     ->toArray();
             });
 
-            foreach ($adminIds as $adminId) {
-                // Gunakan findOrFail atau first untuk mendapatkan instance user jika method sendNotification butuh object
-                // Atau jika sendNotification bisa menerima ID, itu lebih cepat.
-                // Asumsi sendNotification adalah method di model User:
-                $admin = User::find($adminId);
-                if ($admin) {
-                    $admin->sendNotification(
-                        type: 'booking',
-                        title: 'Booking Baru',
-                        message: "{$this->booking->nama_penanggung_jawab} booking {$this->booking->aula?->nama}",
-                        data: [
-                            'booking_id' => $this->booking->id,
-                            'aula' => $this->booking->aula?->nama,
-                            'tanggal' => $this->booking->tanggal_booking,
-                            'sesi' => $this->booking->sesi_waktu,
-                        ],
-                        url: route('admin.kelolabooking.index'),
-                    );
-                }
+            // Ambil semua user penerima sekaligus (lebih efisien daripada find di dalam loop)
+            $penerima = User::whereIn('id', $penerimaIds)->get();
+
+            foreach ($penerima as $user) {
+                $user->sendNotification(
+                    type: 'booking',
+                    title: 'Booking Baru',
+                    message: "{$this->booking->nama_penanggung_jawab} booking {$this->booking->aula?->nama}",
+                    data: [
+                        'booking_id' => $this->booking->id,
+                        'aula' => $this->booking->aula?->nama,
+                        'tanggal' => $this->booking->tanggal_booking,
+                        'sesi' => $this->booking->sesi_waktu,
+                    ],
+                    url: route('admin.kelolabooking.index'),
+                );
+            }
+
+            // Notif konfirmasi ke user pengaju booking
+            if ($this->booking->user) {
+                $this->booking->user->sendNotification(
+                    type: 'booking',
+                    title: 'Booking Berhasil Dikirim',
+                    message: "Booking aula {$this->booking->aula?->nama} tanggal {$this->booking->tanggal_booking} sedang menunggu persetujuan.",
+                    data: [
+                        'booking_id' => $this->booking->id,
+                        'aula' => $this->booking->aula?->nama,
+                        'tanggal' => $this->booking->tanggal_booking,
+                        'sesi' => $this->booking->sesi_waktu,
+                    ],
+                    url: route('riwayat.index'),
+                );
             }
         } catch (\Exception $e) {
             // Kalau gagal simpan notif, jangan bikin booking gagal

@@ -25,11 +25,6 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- *
- * @method \Illuminate\Database\Eloquent\Relations\MorphMany notifications()
- * @method \Illuminate\Database\Eloquent\Relations\MorphMany unreadNotifications()
- * @method void markNotificationAsRead(string $id)
- * @method void markNotificationsAsRead(array $ids)
  */
 class User extends Authenticatable
 {
@@ -62,12 +57,27 @@ class User extends Authenticatable
     ];
 
     // ============================================================
-    // HELPER METHODS
+    // HELPER METHODS (UNTUK ROLE)
     // ============================================================
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin' || $this->is_admin === true;
+    }
+
+    public function isPengelolaSurat(): bool
+    {
+        return $this->role === 'pengelola_surat';
+    }
+
+    public function isPengelolaAula(): bool
+    {
+        return $this->role === 'pengelola_aula';
+    }
+
+    public function isPengelolaAbsensi(): bool
+    {
+        return $this->role === 'pengelola_absensi';
     }
 
     public function isPegawai(): bool

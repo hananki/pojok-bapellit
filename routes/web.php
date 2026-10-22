@@ -90,9 +90,13 @@ Route::middleware(['auth', 'cek.status'])->group(function () {
     // ===== AMBIL SURAT (USER) =====
     Route::get('/surat', [SuratController::class, 'index'])->name('surat.index');
     Route::post('/surat', [SuratController::class, 'store'])->name('surat.store');
+    Route::get('/surat/preview-nomor', [SuratController::class, 'previewNomor'])->name('surat.preview-nomor');
     Route::put('/surat/{id}', [SuratController::class, 'update'])->name('surat.update');
-    Route::get('/surat/{id}', [SuratController::class, 'show'])->name('surat.show');
+    
+    // ⚠️ URUTAN INI DIPINDAHKAN KE ATAS RUTE SHOW AGAR TIDAK 404
     Route::get('/surat/{id}/download', [SuratController::class, 'download'])->name('surat.download');
+    
+    Route::get('/surat/{id}', [SuratController::class, 'show'])->name('surat.show');
 
     // ===== PRESENSI SAYA (USER) =====
     Route::get('/presensi', [PresensiController::class, 'index'])->name('presensi.index');
@@ -142,43 +146,36 @@ Route::middleware(['auth', 'cek.status'])->group(function () {
         ->name('chatbot.clear-history');
 });
 
+
 // ==========================================================
-// ========== ROUTE ADMIN (auth + cek.status + admin) =======
+// ========== ROUTE ADMIN & STAFF ===========================
 // ==========================================================
-Route::middleware(['auth', 'cek.status', 'admin'])
+
+// 0. RUTE DASHBOARD (Bisa diakses semua staf)
+Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_surat,pengelola_aula,pengelola_absensi'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // ===== DASHBOARD =====
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    });
+
+
+// 1. RUTE HANYA UNTUK ADMIN (Akses Penuh)
+Route::middleware(['auth', 'cek.status', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
 
-        // ===== DASHBOARD =====
-        Route::get('/dashboard', [DashboardController::class, 'index'])
-            ->name('dashboard.index');
-
         // ===== PENGATURAN SISTEM =====
-        Route::get('/pengaturan', [SettingsController::class, 'index'])
-            ->name('settings.index');
-
-        Route::get('/pengaturan/suara', [SettingsController::class, 'sound'])
-            ->name('settings.sound');
-
-        Route::get('/pengaturan/sesi-perangkat', [SettingsController::class, 'sessions'])
-            ->name('settings.sessions');
-
-        // Template Chatbot (PUT sebelum DELETE!)
-        Route::post('/pengaturan/chatbot', [SettingsController::class, 'storeTemplate'])
-            ->name('settings.chatbot.store');
-        Route::put('/pengaturan/chatbot/{template}', [SettingsController::class, 'updateTemplate'])
-            ->name('settings.chatbot.update');
-        Route::delete('/pengaturan/chatbot/{template}', [SettingsController::class, 'destroyTemplate'])
-            ->name('settings.chatbot.destroy');
-
-        // Suara Notifikasi
-        Route::put('/pengaturan/suara', [SettingsController::class, 'updateGeneral'])
-            ->name('settings.general.update');
-        Route::post('/pengaturan/suara/reset', [SettingsController::class, 'resetSound'])
-            ->name('settings.sound.reset');
-
-        // Sesi & Perangkat
+        Route::get('/pengaturan', [SettingsController::class, 'index'])->name('settings.index');
+        Route::get('/pengaturan/suara', [SettingsController::class, 'sound'])->name('settings.sound');
+        Route::get('/pengaturan/sesi-perangkat', [SettingsController::class, 'sessions'])->name('settings.sessions');
+        Route::post('/pengaturan/chatbot', [SettingsController::class, 'storeTemplate'])->name('settings.chatbot.store');
+        Route::put('/pengaturan/chatbot/{template}', [SettingsController::class, 'updateTemplate'])->name('settings.chatbot.update');
+        Route::delete('/pengaturan/chatbot/{template}', [SettingsController::class, 'destroyTemplate'])->name('settings.chatbot.destroy');
+        Route::put('/pengaturan/suara', [SettingsController::class, 'updateGeneral'])->name('settings.general.update');
+        Route::post('/pengaturan/suara/reset', [SettingsController::class, 'resetSound'])->name('settings.sound.reset');
         Route::delete('/pengaturan/sesi/semua', [SettingsController::class, 'destroyAllSessions'])->name('settings.sessions.destroy-all');
         Route::delete('/pengaturan/sesi-aktif/semua', [SettingsController::class, 'destroyAllActiveSessions'])->name('settings.sessions.destroy-all-active');
         Route::delete('/pengaturan/sesi/{history}', [SettingsController::class, 'destroySession'])->name('settings.sessions.destroy');
@@ -196,24 +193,28 @@ Route::middleware(['auth', 'cek.status', 'admin'])
         Route::put('/kendaraan/{id}', [KendaraanController::class, 'update'])->name('kendaraan.update');
         Route::delete('/kendaraan/{id}', [KendaraanController::class, 'destroy'])->name('kendaraan.destroy');
 
-        // ===== KELOLA AULA =====
+        // ===== KELOLA AULA (MASTER DATA) =====
         Route::post('/aula/{id}/toggle-status', [AulaController::class, 'toggleStatus'])->name('aula.toggle-status');
         Route::post('/aula/{id}/delete-photos', [AulaController::class, 'deletePhotos'])->name('aula.delete-photos');
         Route::delete('/aula/{id}/delete-photo', [AulaController::class, 'deletePhoto'])->name('aula.delete-photo');
         Route::resource('aula', AulaController::class);
 
-        // ===== KELOLA BOOKING (ADMIN) =====
-        Route::get('/kelolabooking', [AdminBookingController::class, 'index'])->name('kelolabooking.index');
-        Route::get('/kelolabooking/export', [AdminBookingController::class, 'export'])->name('kelolabooking.export');
-        Route::post('/kelolabooking/bulk-destroy', [AdminBookingController::class, 'bulkDestroy'])->name('kelolabooking.bulk-destroy');
-        Route::get('/kelolabooking/{id}', [AdminBookingController::class, 'detail'])->name('kelolabooking.detail');
-        Route::post('/kelolabooking/{id}/approve', [AdminBookingController::class, 'approve'])->name('kelolabooking.approve');
-        Route::post('/kelolabooking/{id}/reject', [AdminBookingController::class, 'reject'])->name('kelolabooking.reject');
-        Route::post('/kelolabooking/{id}/complete', [AdminBookingController::class, 'complete'])->name('kelolabooking.complete');
-        Route::put('/kelolabooking/{id}', [AdminBookingController::class, 'update'])->name('kelolabooking.update');
-        Route::delete('/kelolabooking/{id}', [AdminBookingController::class, 'destroy'])->name('kelolabooking.destroy');
+        // ===== KELOLA AKUN =====
+        Route::get('/kelolaakun', [UserController::class, 'index'])->name('kelolaakun.index');
+        Route::get('/kelolaakun/create', [UserController::class, 'create'])->name('kelolaakun.create');
+        Route::post('/kelolaakun', [UserController::class, 'store'])->name('kelolaakun.store');
+        Route::get('/kelolaakun/{id}/edit', [UserController::class, 'edit'])->name('kelolaakun.edit');
+        Route::put('/kelolaakun/{id}', [UserController::class, 'update'])->name('kelolaakun.update');
+        Route::delete('/kelolaakun/{id}', [UserController::class, 'destroy'])->name('kelolaakun.destroy');
+    });
 
-        // ===== KELOLA SURAT (ADMIN) =====
+
+// 2. RUTE PENGELOLA SURAT (Admin & Pengelola Surat)
+Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_surat'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // ===== KELOLA SURAT =====
         Route::get('/kelolasurat', [AdminSuratController::class, 'index'])->name('kelolasurat.index');
         Route::get('/kelolasurat/export', [AdminSuratController::class, 'export'])->name('kelolasurat.export');
         Route::get('/kelolasurat/pengaturan', [AdminSuratController::class, 'pengaturan'])->name('kelolasurat.pengaturan');
@@ -223,19 +224,36 @@ Route::middleware(['auth', 'cek.status', 'admin'])
         Route::get('/kelolasurat/{id}/edit', [AdminSuratController::class, 'edit'])->name('kelolasurat.edit');
         Route::put('/kelolasurat/{id}', [AdminSuratController::class, 'update'])->name('kelolasurat.update');
         Route::delete('/kelolasurat/{id}', [AdminSuratController::class, 'destroy'])->name('kelolasurat.destroy');
+    });
 
-        // ===== KELOLA AKUN (ADMIN) =====
-        Route::get('/kelolaakun', [UserController::class, 'index'])->name('kelolaakun.index');
-        Route::get('/kelolaakun/create', [UserController::class, 'create'])->name('kelolaakun.create');
-        Route::post('/kelolaakun', [UserController::class, 'store'])->name('kelolaakun.store');
-        Route::get('/kelolaakun/{id}/edit', [UserController::class, 'edit'])->name('kelolaakun.edit');
-        Route::put('/kelolaakun/{id}', [UserController::class, 'update'])->name('kelolaakun.update');
-        Route::delete('/kelolaakun/{id}', [UserController::class, 'destroy'])->name('kelolaakun.destroy');
 
-        // ===== KELOLA PEGAWAI (ADMIN) =====
+// 3. RUTE PENGELOLA AULA / BOOKING (Admin & Pengelola Aula)
+Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_aula'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // ===== KELOLA BOOKING =====
+        Route::get('/kelolabooking', [AdminBookingController::class, 'index'])->name('kelolabooking.index');
+        Route::get('/kelolabooking/export', [AdminBookingController::class, 'export'])->name('kelolabooking.export');
+        Route::post('/kelolabooking/bulk-destroy', [AdminBookingController::class, 'bulkDestroy'])->name('kelolabooking.bulk-destroy');
+        Route::get('/kelolabooking/{id}', [AdminBookingController::class, 'detail'])->name('kelolabooking.detail');
+        Route::post('/kelolabooking/{id}/approve', [AdminBookingController::class, 'approve'])->name('kelolabooking.approve');
+        Route::post('/kelolabooking/{id}/reject', [AdminBookingController::class, 'reject'])->name('kelolabooking.reject');
+        Route::post('/kelolabooking/{id}/complete', [AdminBookingController::class, 'complete'])->name('kelolabooking.complete');
+        Route::put('/kelolabooking/{id}', [AdminBookingController::class, 'update'])->name('kelolabooking.update');
+        Route::delete('/kelolabooking/{id}', [AdminBookingController::class, 'destroy'])->name('kelolabooking.destroy');
+    });
+
+
+// 4. RUTE PENGELOLA ABSENSI (Admin & Pengelola Absensi)
+Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_absensi'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // ===== KELOLA PEGAWAI =====
         Route::get('/pegawai', [AbsensiController::class, 'pegawai'])->name('pegawai.index');
 
-        // ===== KELOLA ABSENSI (ADMIN) =====
+        // ===== KELOLA ABSENSI =====
         Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
         Route::get('/absensi/create', [AbsensiController::class, 'create'])->name('absensi.create');
         Route::post('/absensi', [AbsensiController::class, 'store'])->name('absensi.store');

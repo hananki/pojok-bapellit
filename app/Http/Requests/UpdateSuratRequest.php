@@ -19,7 +19,7 @@ class UpdateSuratRequest extends FormRequest
             'tanggal' => 'nullable|date',
             'no_indek' => 'nullable|string|max:255',
             'alamat_tujuan' => 'nullable|string|max:255',
-            'isi_surat' => 'required|string',
+            'isi_surat' => 'nullable|string', // Diubah dari required ke nullable
             'keterangan' => 'nullable|string',
             'file_surat' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
         ];
@@ -28,7 +28,7 @@ class UpdateSuratRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'isi_surat.required' => 'Isi surat wajib diisi',
+            // Pesan 'isi_surat.required' dihapus karena sekarang opsional
             'file_surat.mimes' => 'File harus berupa PDF, DOC, DOCX, XLS, atau XLSX',
             'file_surat.max' => 'Ukuran file maksimal 5MB',
         ];

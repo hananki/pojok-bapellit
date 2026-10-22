@@ -2,253 +2,241 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dark Mode Styles */
-@layer base {
-    /* Dark mode background transitions */
-    .dark {
-        @apply bg-slate-950 text-slate-100;
-    }
+/* ========================================================
+   GLOBAL PURE JET BLACK (AMOLED / TRUE BLACK) THEME ENGINE
+   ======================================================== */
 
-    .dark body {
-        @apply bg-slate-950 text-slate-100;
-    }
-
-    .dark nav {
-        @apply bg-slate-900 border-slate-800;
-    }
-
-    /* Text Colors in Dark Mode */
-    .dark h1,
-    .dark h2,
-    .dark h3,
-    .dark h4,
-    .dark h5,
-    .dark h6 {
-        @apply text-white;
-    }
-
-    .dark p {
-        @apply text-slate-200;
-    }
-
-    .dark a {
-        @apply text-indigo-400 hover:text-indigo-300;
-    }
-
-    .dark label {
-        @apply text-slate-200;
-    }
-
-    .dark input,
-    .dark textarea,
-    .dark select {
-        @apply bg-slate-800 text-slate-100 border-slate-700 placeholder-slate-400;
-    }
-
-    .dark input::placeholder,
-    .dark textarea::placeholder {
-        @apply text-slate-500;
-    }
-
-    .dark button {
-        @apply transition-colors;
-    }
-
-    .dark .bg-white {
-        @apply bg-slate-800 text-slate-100;
-    }
-
-    .dark .text-gray-900 {
-        @apply text-slate-50;
-    }
-
-    .dark .text-gray-800 {
-        @apply text-slate-100;
-    }
-
-    .dark .text-gray-700 {
-        @apply text-slate-200;
-    }
-
-    .dark .text-gray-600 {
-        @apply text-slate-300;
-    }
-
-    .dark .text-gray-500 {
-        @apply text-slate-400;
-    }
-
-    .dark .text-gray-400 {
-        @apply text-slate-500;
-    }
-
-    .dark .text-gray-300 {
-        @apply text-slate-600;
-    }
-
-    .dark .text-gray-200 {
-        @apply text-slate-700;
-    }
-
-    .dark .text-gray-100 {
-        @apply text-slate-800;
-    }
-
-    .dark .border-gray-200 {
-        @apply border-slate-700;
-    }
-
-    .dark .border-gray-100 {
-        @apply border-slate-800;
-    }
-
-    .dark .border-gray-300 {
-        @apply border-slate-600;
-    }
-
-    .dark .shadow-sm {
-        @apply shadow-slate-900/50;
-    }
-
-    .dark .hover\:bg-gray-100:hover {
-        @apply bg-slate-700;
-    }
-
-    .dark .hover\:bg-gray-50:hover {
-        @apply bg-slate-800;
-    }
-
-    .dark .hover\:text-gray-900:hover {
-        @apply text-slate-50;
-    }
-
-    .dark .hover\:text-gray-700:hover {
-        @apply text-slate-200;
-    }
-
-    /* Form elements */
-    .dark .form-input,
-    .dark .form-textarea,
-    .dark .form-select {
-        @apply bg-slate-800 text-slate-100 border-slate-700;
-    }
-
-    .dark .form-input:focus,
-    .dark .form-textarea:focus,
-    .dark .form-select:focus {
-        @apply border-indigo-500 ring-indigo-500;
-    }
-
-    /* Table elements */
-    .dark table {
-        @apply text-slate-200;
-    }
-
-    .dark th {
-        @apply bg-slate-800 text-slate-100;
-    }
-
-    .dark td {
-        @apply border-slate-700;
-    }
-
-    .dark tr:hover {
-        @apply bg-slate-800;
-    }
-
-    /* Card and container elements */
-    .dark .rounded-lg,
-    .dark .rounded-xl {
-        @apply bg-slate-800 text-slate-100;
-    }
-
-    .dark .ring-black {
-        @apply ring-slate-900;
-    }
-
-    /* Notification components */
-    .dark .divide-y.divide-gray-100 {
-        @apply divide-slate-700;
-    }
-
-    .dark .bg-blue-50\/50 {
-        @apply bg-blue-900/20;
-    }
-
-    .dark .bg-blue-100,
-    .dark .bg-green-100,
-    .dark .bg-gray-100 {
-        @apply bg-slate-700;
-    }
-
-    .dark .text-blue-600,
-    .dark .text-green-600,
-    .dark .text-gray-600 {
-        @apply text-slate-300;
-    }
-
-    .dark .text-indigo-600 {
-        @apply text-indigo-400;
-    }
-
-    /* Better button contrast in dark mode */
-    .dark .text-gray-400.hover\:text-red-500:hover {
-        @apply text-red-400 hover:text-red-300;
-    }
-
-    .dark .hover\:text-red-600:hover {
-        @apply text-red-400;
-    }
-
-    .dark .hover\:bg-red-50:hover {
-        @apply bg-red-900/20;
-    }
-
-    /* Enhanced table styling for dark mode */
-    .dark table {
-        @apply text-slate-100;
-    }
-
-    .dark th {
-        @apply bg-slate-800 text-slate-50 border-slate-700;
-    }
-
-    .dark td {
-        @apply border-slate-700 text-slate-200;
-    }
-
-    .dark tr {
-        @apply border-slate-700;
-    }
-
-    .dark tr:hover {
-        @apply bg-slate-800/50;
-    }
-
-    .dark tbody tr:nth-child(even) {
-        @apply bg-slate-900/30;
-    }
-
-    /* Notification bell dropdown */
-    .dark .sticky.bg-gray-50\/95 {
-        @apply bg-slate-800/95;
-    }
-
-    .dark .text-gray-500.uppercase {
-        @apply text-slate-400;
-    }
-
-    .dark .bg-blue-50 {
-        @apply bg-blue-900/20;
-    }
-
-    .dark .line-clamp-2 {
-        @apply text-slate-300;
-    }
+html.dark {
+    color-scheme: dark;
 }
 
-/* Theme transition */
-* {
-    @apply transition-colors duration-200;
+/* 1. Root & Body: 100% Pure Black (Zero Blue Tint) */
+html.dark,
+html.dark body {
+    background-color: #000000 !important;
+    color: #f5f5f5 !important;
 }
 
+/* 2. Navbar: Solid Deep Jet Black */
+html.dark nav,
+html.dark nav.bg-gradient-to-r {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    background-image: none !important;
+    border-bottom: 1px solid #1f1f1f !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9) !important;
+}
+
+html.dark div.bg-gradient-to-r.md\:hidden {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    background-image: none !important;
+    border-bottom: 1px solid #1f1f1f !important;
+}
+
+/* 3. Footer: Solid Deep Jet Black */
+html.dark footer,
+html.dark footer.bg-gradient-to-r {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    background-image: none !important;
+    border-top: 1px solid #1f1f1f !important;
+    color: #f5f5f5 !important;
+}
+
+html.dark footer a {
+    color: #d4d4d4 !important;
+}
+
+html.dark footer a:hover {
+    color: #2dd4bf !important;
+}
+
+html.dark footer p,
+html.dark footer span {
+    color: #8a8a8a !important;
+}
+
+html.dark footer h3,
+html.dark footer strong {
+    color: #ffffff !important;
+}
+
+/* 4. Surfaces & Containers: Jet Dark Cards (#0d0d0d / #111111) */
+html.dark .bg-white {
+    background-color: #0d0d0d !important;
+    color: #f5f5f5 !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-100 {
+    background-color: #050505 !important;
+    color: #d4d4d4 !important;
+}
+
+html.dark .bg-gray-200 {
+    background-color: #171717 !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 {
+    background-color: #0a0a0a !important;
+}
+
+/* 5. Hover States */
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-50\/80:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-slate-50:hover {
+    background-color: #171717 !important;
+}
+
+html.dark .hover\:bg-teal-50:hover {
+    background-color: rgba(13, 148, 136, 0.2) !important;
+    color: #2dd4bf !important;
+}
+
+/* 6. Clean Neutral Borders (No Blue) */
+html.dark .border,
+html.dark .border-t,
+html.dark .border-b,
+html.dark .border-l,
+html.dark .border-r,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-200\/80,
+html.dark .border-gray-300,
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-white\/20,
+html.dark .border-white\/30 {
+    border-color: #1f1f1f !important;
+}
+
+html.dark .divide-gray-100 > * + *,
+html.dark .divide-gray-200 > * + * {
+    border-color: #1f1f1f !important;
+}
+
+/* 7. High Contrast Typography */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+    color: #ffffff !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-gray-800 {
+    color: #ffffff !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+    color: #d4d4d4 !important; /* Neutral silver-white */
+}
+
+html.dark .text-gray-500 {
+    color: #8a8a8a !important; /* Legible medium silver */
+}
+
+html.dark .text-gray-400 {
+    color: #636363 !important;
+}
+
+html.dark .text-indigo-600,
+html.dark .text-indigo-700 {
+    color: #818cf8 !important;
+}
+
+html.dark .text-teal-600,
+html.dark .text-teal-700 {
+    color: #2dd4bf !important;
+}
+
+/* 8. Inputs, Textareas, Selects */
+html.dark input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select,
+html.dark .form-input,
+html.dark .form-textarea,
+html.dark .form-select {
+    background-color: #121212 !important;
+    color: #ffffff !important;
+    border-color: #262626 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #636363 !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25) !important;
+}
+
+/* 9. Tables */
+html.dark table {
+    color: #d4d4d4 !important;
+}
+
+html.dark th {
+    background-color: #080808 !important;
+    color: #ffffff !important;
+    border-color: #1f1f1f !important;
+}
+
+html.dark td {
+    border-color: #171717 !important;
+}
+
+html.dark tr.hover\:bg-gray-50\/80:hover,
+html.dark tr:hover {
+    background-color: #141414 !important;
+}
+
+html.dark tbody tr:nth-child(even) {
+    background-color: #080808 !important;
+}
+
+/* 10. Dropdowns & Rings */
+html.dark .ring-black {
+    --tw-ring-color: #1f1f1f !important;
+}
+
+html.dark .shadow-sm,
+html.dark .shadow,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* 11. SweetAlert Dark Mode */
+html.dark .swal2-popup {
+    background-color: #0d0d0d !important;
+    color: #ffffff !important;
+    border: 1px solid #262626 !important;
+}
+
+html.dark .swal2-title {
+    color: #ffffff !important;
+}
+
+html.dark .swal2-html-container {
+    color: #d4d4d4 !important;
+}
+
+/* 12. Smooth Theme Transition */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *:before,
+html.theme-transition *:after {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease !important;
+}

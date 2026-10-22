@@ -49,7 +49,7 @@ class SuratExport implements FromQuery, WithCustomStartCell, WithEvents, WithHea
     public function headings(): array
     {
         return [
-            'No. Urut',
+            'No Surat', // Ganti dari 'No. Urut' menjadi 'No Surat'
             'Tanggal',
             'No. / Indeks',
             'Alamat Yang Dituju',
@@ -63,9 +63,9 @@ class SuratExport implements FromQuery, WithCustomStartCell, WithEvents, WithHea
     public function map($surat): array
     {
         return [
-            $surat->id,
+            $surat->no_surat ?? '-', // Mengambil langsung dari kolom no_surat
             $surat->tanggal?->format('d-m-Y') ?? $surat->created_at?->format('d-m-Y') ?? '-',
-            $surat->no_indek ?? $surat->no_surat ?? '-',
+            $surat->no_indek ?? '-', 
             $surat->alamat_tujuan ?? '-',
             $surat->isi_surat ?? '-',
             $surat->banyak_lampiran ?? 0,
@@ -102,7 +102,7 @@ class SuratExport implements FromQuery, WithCustomStartCell, WithEvents, WithHea
 
         $sheet->getStyle('A4:H4')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '374151']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '0d9488']],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER,
@@ -121,14 +121,19 @@ class SuratExport implements FromQuery, WithCustomStartCell, WithEvents, WithHea
                 mb_strlen((string) $sheet->getCell("H{$row}")->getValue())
             );
             $estimatedLines = max(1, (int) ceil($contentLength / 42));
-            $sheet->getRowDimension($row)->setRowHeight(max(24, min(90, $estimatedLines * 15)));
+            // Hapus batas min(90) agar teks panjang tidak terpotong
+            $sheet->getRowDimension($row)->setRowHeight(max(24, $estimatedLines * 15));
         }
 
-        // Lebar tetap mencegah isi panjang memperlebar kolom; wrap text
-        // membuat teks turun ke baris berikutnya.
         $widths = [
-            'A' => 12, 'B' => 15, 'C' => 24, 'D' => 28,
-            'E' => 42, 'F' => 18, 'G' => 16, 'H' => 28,
+            'A' => 15, // Sedikit dilebarkan untuk No Surat
+            'B' => 15, 
+            'C' => 24, 
+            'D' => 28,
+            'E' => 42, 
+            'F' => 18, 
+            'G' => 16, 
+            'H' => 28,
         ];
 
         foreach ($widths as $column => $width) {

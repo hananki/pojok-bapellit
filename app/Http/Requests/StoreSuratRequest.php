@@ -19,17 +19,17 @@ class StoreSuratRequest extends FormRequest
             'tanggal' => 'nullable|date',
             'no_indek' => 'nullable|string|max:255',
             'alamat_tujuan' => 'nullable|string|max:255',
-            'isi_surat' => 'required|string',
+            'isi_surat' => 'nullable|string', // Diubah menjadi nullable agar tidak wajib diisi
             'keterangan' => 'nullable|string',
-            'file_surat' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
+            'file_surat' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:5120', // Diubah menjadi nullable
+            'no_surat_hidden' => 'nullable|string|max:255',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'isi_surat.required' => 'Isi surat wajib diisi',
-            'file_surat.required' => 'Lampiran wajib diupload',
+            // Pesan error untuk isi_surat dan file_surat dihapus karena sekarang opsional
             'file_surat.mimes' => 'File harus berupa PDF, DOC, DOCX, XLS, atau XLSX',
             'file_surat.max' => 'Ukuran file maksimal 5MB',
         ];

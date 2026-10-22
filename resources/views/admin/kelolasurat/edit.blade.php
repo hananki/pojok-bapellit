@@ -1,8 +1,11 @@
 @php
     /** @var \App\Models\User|null $user */
     $user = Auth::user();
-    $isAdmin = $user?->isAdmin() ?? false;
-    $layout = $isAdmin ? 'layouts.admin' : 'layouts.user';
+    $currentRole = $user?->role ?? 'user';
+    
+    // Tentukan layout berdasarkan role (Admin & Pengelola Surat pakai layout Admin)
+    $isPanelUser = in_array($currentRole, ['admin', 'pengelola_surat']);
+    $layout = $isPanelUser ? 'layouts.admin' : 'layouts.user';
 @endphp
 
 @extends($layout)

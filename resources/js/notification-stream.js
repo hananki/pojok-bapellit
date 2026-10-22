@@ -142,11 +142,32 @@
                 this._dropAt = null;
             };
 
-            es.addEventListener('notification', (e) => {
+                    es.addEventListener('notification', (e) => {
                 if (es !== this.eventSource) return;
                 try {
                     const notif = JSON.parse(e.data);
 
+                    // ===== FILTER BERDASARKAN ROLE =====
+                    const userRole = window.authUserRole || document.querySelector('meta[name="user-role"]')?.content || 'user';
+                    const notifType = notif.type || ''; // Mengambil tipe dari payload
+
+                    let isAllowed = false;
+                    if (userRole === 'admin') {
+                        isAllowed = true;
+                    } else if (userRole === 'pengelola_surat' && notifType === 'surat') {
+                        isAllowed = true;
+                    } else if (userRole === 'pengelola_aula' && notifType === 'booking') {
+                        isAllowed = true;
+                    } else if (userRole === 'pengelola_absensi' && notifType === 'absensi') {
+                        isAllowed = true;
+                    } else if (userRole === 'user' && ['booking', 'surat', 'presensi'].includes(notifType)) {
+                        isAllowed = true;
+                    }
+
+                    // Jika tidak berhak, abaikan sinyal ini (jangan naikkan unreadCount)
+                    if (!isAllowed) return;
+
+                    // ===== JIKA BERHAK, JALANKAN =====
                     this.unreadCount++;
                     this.onUnreadCountChange(this.unreadCount);
                     this.onNotification(notif);

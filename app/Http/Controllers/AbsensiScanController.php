@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AbsensiHadir;
 use App\Models\AbsensiDetail;
 use App\Models\AbsensiSesi;
 use Carbon\Carbon;
@@ -109,6 +110,9 @@ class AbsensiScanController extends Controller
             'keterangan' => null,
         ]);
 
+        // Kirim notif ke admin, pengelola_absensi, dan user yang hadir
+        broadcast(new AbsensiHadir($detail->fresh(['user', 'sesi'])));
+
         return view('presensi.scan-result', [
             'status' => 'success',
             'title' => 'Absensi Berhasil!',
@@ -199,6 +203,9 @@ class AbsensiScanController extends Controller
             'waktu_absen' => now(),
             'keterangan' => null,
         ]);
+
+        // Kirim notif ke admin, pengelola_absensi, dan user yang hadir
+        broadcast(new AbsensiHadir($detail->fresh(['user', 'sesi'])));
 
         return response()->json([
             'success' => true,

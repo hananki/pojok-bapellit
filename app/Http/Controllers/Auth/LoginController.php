@@ -72,14 +72,18 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            $isAdmin = $user->role === 'admin' || $user->is_admin === true;
+            $role = $user->role;
 
-            // Redirect berdasarkan role
-            if ($isAdmin) {
-                return redirect()->route('admin.dashboard.index');
-            }
-
-            return redirect()->route('booking.index');
+            // ==========================================
+            // REDIRECT BERDASARKAN ROLE
+            // ==========================================
+            return match ($role) {
+                'admin' => redirect()->route('admin.dashboard.index'),
+                'pengelola_surat' => redirect()->route('admin.kelolasurat.index'),
+                'pengelola_aula' => redirect()->route('admin.kelolabooking.index'),
+                'pengelola_absensi' => redirect()->route('admin.absensi.index'),
+                default => redirect()->route('booking.index'), // User biasa
+            };
         }
 
         return back()->withErrors([
