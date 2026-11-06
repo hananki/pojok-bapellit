@@ -7,13 +7,12 @@ use App\Models\Aula;
 use App\Models\Booking;
 use App\Services\Chatbot\Support\DateParser;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
- * Tool AI untuk BOOKING AULA:
- *  - check_booking_availability : cek satu aula pada tanggal + sesi
- *  - list_available_aulas       : daftar semua aula yang kosong pada tanggal tertentu
- *  - create_booking             : buat booking baru (status Pending)
- *  - get_riwayat_booking        : 5 riwayat booking terakhir user
+ * Tool AI untuk BOOKING AULA.
  */
 class BookingTools implements ToolGroup
 {
@@ -78,12 +77,12 @@ class BookingTools implements ToolGroup
                 'type' => 'function',
                 'function' => [
                     'name' => 'list_available_aulas',
-                    'description' => 'Lihat SEMUA aula yang kosong/tersedia pada tanggal tertentu (atau besok). Pakai ini jika user bertanya aula apa saja yang kosong, bukan untuk satu aula spesifik.',
+                    'description' => 'Lihat SEMUA aula yang kosong pada tanggal tertentu (atau besok).',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'tanggal_booking' => ['type' => 'string', 'description' => 'Format YYYY-MM-DD (ubah dari nama bulan Indonesia/Inggris atau kata seperti besok)'],
-                            'sesi_waktu' => ['type' => 'string', 'enum' => ['pagi', 'siang', 'seharian'], 'description' => 'Opsional. Kosongkan jika user tidak menyebut sesi.'],
+                            'tanggal_booking' => ['type' => 'string', 'description' => 'Format YYYY-MM-DD'],
+                            'sesi_waktu' => ['type' => 'string', 'enum' => ['pagi', 'siang', 'seharian']],
                         ],
                         'required' => ['tanggal_booking'],
                     ],
@@ -102,28 +101,28 @@ class BookingTools implements ToolGroup
 
     public function run(string $name, array &$arguments, Authenticatable $user): string
     {
-        return match ($name) {
-            'check_booking_availability' => $this->checkAvailability($arguments, $user),
-            'list_available_aulas' => $this->listAvailable($arguments, $user),
-            'create_booking' => $this->createBooking($arguments, $user),
-            'get_riwayat_booking' => $this->history($user),
-            default => "Fungsi tidak dikenal: {$name}",
-        };
+        try {
+            return match ($name) {
+                'check_booking_availability' => $this->checkAvailability($arguments, $user),
+                'list_available_aulas' => $this->listAvailable($arguments, $user),
+                'create_booking' => $this->createBooking($arguments, $user),
+                'get_riwayat_booking' => $this->history($user),
+                default => $this->fail("Fungsi tidak dikenal: {$name}"),
+            };
+        } catch (Throwable $e) {
+            Log::error('[BookingTools] Exception', [
+                'tool' => $name,
+                'message' => $e->getMessage(),
+                'arguments' => $arguments,
+            ]);
+            return $this->fail('Terjadi kesalahan sistem: '.$e->getMessage());
+        }
     }
 
     public function describe(string $name, array $arguments, string $result): string
     {
-        if ($name === 'check_booking_availability' && ($result === 'Tersedia' || str_starts_with($result, 'Sudah dibooking'))) {
-            $aulaId = $arguments['aula_id'] ?? null;
-            $aula = is_numeric($aulaId) ? Aula::find((int) $aulaId) : null;
-            $nama = $aula?->nama ?? ('ID '.($aulaId ?? '?'));
-
-            $date = $this->dates->parse((string) ($arguments['tanggal_booking'] ?? ''));
-            $tanggal = $date ? $this->dates->formatIndo($date) : ($arguments['tanggal_booking'] ?? '-');
-
-            return "Aula {$nama} pada {$tanggal} sesi ".($arguments['sesi_waktu'] ?? '-').": {$result}";
-        }
-
+        // [FIX] Cukup return string aslinya. Jangan ditambahi teks apapun.
+        // PromptBuilder (followUp) yang akan merangkai ini jadi kalimat konfirmasi yang rapi.
         return $result;
     }
 
@@ -132,42 +131,120 @@ class BookingTools implements ToolGroup
     private function checkAvailability(array &$arguments, Authenticatable $user): string
     {
         if ($dateError = $this->dates->resolveBookingDate($arguments)) {
-            return $dateError;
+            return $this->fail($dateError);
         }
 
-        $request = $this->support->makeRequest($arguments, $user);
-        $request->validate([
-            'aula_id' => 'required|exists:aulas,id',
-            'tanggal_booking' => 'required|date',
-            'sesi_waktu' => 'required|in:pagi,siang,seharian',
-        ]);
+        try {
+            $request = $this->support->makeRequest($arguments, $user);
+            $request->validate([
+                'aula_id' => 'required|exists:aulas,id',
+                'tanggal_booking' => 'required|date',
+                'sesi_waktu' => 'required|in:pagi,siang,seharian',
+            ]);
+        } catch (ValidationException $e) {
+            return $this->fail('Data tidak valid: '.implode(', ', $e->validator->errors()->all()));
+        }
 
         [$controller, $method] = $this->availabilityMethod();
+        $available = $method->invoke($controller, $request);
 
-        return $method->invoke($controller, $request) ? 'Tersedia' : 'Sudah dibooking pada waktu tersebut.';
+        // [FIX] Super singkat biar ga buang token & ga bikin AI ngulang-ngulang.
+        if ($available) {
+            return $this->ok('Tersedia');
+        }
+
+        return $this->fail('Sudah dibooking pada waktu tersebut.');
     }
 
     private function listAvailable(array &$arguments, Authenticatable $user): string
     {
         if ($dateError = $this->dates->resolveBookingDate($arguments)) {
-            return $dateError;
+            return $this->fail($dateError);
         }
 
-        return $this->listAvailableAulas($user, $arguments['tanggal_booking'], $arguments['sesi_waktu'] ?? null);
+        try {
+            return $this->listAvailableAulas($user, $arguments['tanggal_booking'], $arguments['sesi_waktu'] ?? null);
+        } catch (Throwable $e) {
+            Log::error('[BookingTools] list_available_aulas error', ['message' => $e->getMessage()]);
+            return $this->fail('Gagal mengambil daftar aula: '.$e->getMessage());
+        }
     }
 
     private function createBooking(array &$arguments, Authenticatable $user): string
     {
         if ($dateError = $this->dates->resolveBookingDate($arguments)) {
-            return $dateError;
+            return $this->fail($dateError);
         }
 
-        $request = $this->support->makeRequest($arguments, $user);
-        $request->merge(['user_id' => $user->getAuthIdentifier()]);
+        // Pre-validasi field wajib sebelum sentuh DB
+        $requiredFields = ['aula_id', 'tanggal_booking', 'nama_penanggung_jawab', 'keperluan', 'jumlah_peserta', 'sesi_waktu'];
+        foreach ($requiredFields as $field) {
+            if (empty($arguments[$field])) {
+                return $this->fail("Data {$field} belum lengkap. Mohon lengkapi dulu.");
+            }
+        }
 
-        $response = (new BookingController())->store($request);
+        // Cek ketersediaan dulu sebelum create (supaya tidak error di tengah jalan)
+        try {
+            [$controller, $method] = $this->availabilityMethod();
+            $availReq = $this->support->makeRequest([
+                'aula_id' => $arguments['aula_id'],
+                'tanggal_booking' => $arguments['tanggal_booking'],
+                'sesi_waktu' => $arguments['sesi_waktu'],
+            ], $user);
 
-        return $this->support->summarize($response, 'Booking berhasil dibuat dengan status Pending.');
+            if (! $method->invoke($controller, $availReq)) {
+                return $this->fail('Gagal: Aula sudah dibooking pada sesi tersebut. Silakan pilih waktu lain.');
+            }
+        } catch (Throwable $e) {
+            Log::warning('[BookingTools] Pre-check availability gagal', ['message' => $e->getMessage()]);
+        }
+
+        try {
+            $request = $this->support->makeRequest($arguments, $user);
+            $request->merge(['user_id' => $user->getAuthIdentifier()]);
+
+            $response = (new BookingController())->store($request);
+
+            if ($response instanceof \Illuminate\Http\RedirectResponse) {
+                $errors = session()->pull('errors');
+                if ($errors && $errors->any()) {
+                    return $this->fail('Booking gagal: '.implode(', ', $errors->all()));
+                }
+
+                $status = session()->pull('status');
+                $success = session()->pull('success');
+
+                if ($success || $status) {
+                    return $this->ok((string) ($success ?? $status ?? 'Booking berhasil dibuat. Status saat ini Pending, menunggu persetujuan admin.'));
+                }
+            }
+
+            if ($response instanceof \Illuminate\Http\JsonResponse) {
+                $data = $response->getData(true);
+                if ($response->getStatusCode() >= 400 || (isset($data['success']) && $data['success'] === false)) {
+                    return $this->fail($data['message'] ?? 'Booking gagal diproses.');
+                }
+                return $this->ok($data['message'] ?? 'Booking berhasil dibuat. Status saat ini Pending, menunggu persetujuan admin.');
+            }
+
+            $summary = $this->support->summarize($response, 'Booking berhasil dibuat. Status saat ini Pending, menunggu persetujuan admin.');
+
+            $lower = mb_strtolower($summary);
+            if (str_contains($lower, 'gagal') || str_contains($lower, 'error') || str_contains($lower, 'tidak valid')) {
+                return $this->fail($summary);
+            }
+
+            return $this->ok($summary);
+        } catch (ValidationException $e) {
+            return $this->fail('Data booking tidak valid: '.implode(', ', $e->validator->errors()->all()));
+        } catch (Throwable $e) {
+            Log::error('[BookingTools] create_booking exception', [
+                'message' => $e->getMessage(),
+                'arguments' => $arguments,
+            ]);
+            return $this->fail('Booking gagal: '.$e->getMessage());
+        }
     }
 
     private function history(Authenticatable $user): string
@@ -178,14 +255,17 @@ class BookingTools implements ToolGroup
             ->limit(5)
             ->get();
 
-        return $bookings->isEmpty()
-            ? 'Belum ada riwayat booking.'
-            : $bookings->map(fn ($b) => '- '.($b->aula?->nama ?? 'Aula tidak ditemukan')." pada {$b->tanggal_booking} ({$b->status})")->implode("\n");
+        if ($bookings->isEmpty()) {
+            return $this->ok('Belum ada riwayat booking.');
+        }
+
+        $lines = $bookings->map(fn ($b) => '- '.($b->aula?->nama ?? 'Aula tidak ditemukan')." pada {$b->tanggal_booking} ({$b->status})")->implode("\n");
+
+        return $this->ok("Berikut 5 riwayat booking terakhir Anda:\n" . $lines);
     }
 
-    /**
-     * isAvailable() milik BookingController dipanggil lewat reflection (method-nya private/protected).
-     */
+    // ── Helper ──────────────────────────────────────────────────────
+
     private function availabilityMethod(): array
     {
         $controller = new BookingController();
@@ -195,15 +275,12 @@ class BookingTools implements ToolGroup
         return [$controller, $method];
     }
 
-    /**
-     * Daftar aula yang kosong pada tanggal (dan sesi opsional) tertentu.
-     */
-    private function listAvailableAulas(\Illuminate\Contracts\Auth\Authenticatable $user, string $tanggal, ?string $sesi): string
+    private function listAvailableAulas(Authenticatable $user, string $tanggal, ?string $sesi): string
     {
         $aulas = Aula::all(['id', 'nama', 'lokasi']);
 
         if ($aulas->isEmpty()) {
-            return 'Belum ada data aula di database.';
+            return $this->fail('Belum ada data aula di database.');
         }
 
         $bookingController = new BookingController();
@@ -237,9 +314,25 @@ class BookingTools implements ToolGroup
         $sesiLabel = count($sesiList) === 1 ? " sesi {$sesiList[0]}" : '';
 
         if ($lines === []) {
-            return "Tidak ada aula yang kosong pada {$label}{$sesiLabel}. Semua aula sudah dibooking.";
+            return $this->fail("Tidak ada aula yang kosong pada {$label}{$sesiLabel}. Semua aula sudah dibooking.");
         }
 
-        return 'Ada '.count($lines)." aula yang kosong pada {$label}{$sesiLabel}:\n".implode("\n", $lines);
+        return $this->ok('Ada '.count($lines)." aula yang kosong pada {$label}{$sesiLabel}:\n".implode("\n", $lines));
+    }
+
+    private function ok(string $message): string
+    {
+        return json_encode([
+            'success' => true,
+            'message' => $message,
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    private function fail(string $error): string
+    {
+        return json_encode([
+            'success' => false,
+            'error' => $error,
+        ], JSON_UNESCAPED_UNICODE);
     }
 }

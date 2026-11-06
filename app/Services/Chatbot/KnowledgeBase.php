@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
- * Knowledge base yang disisipkan ke prompt AI: template, data kendaraan/pegawai, dan data aula (+ID).
+ * Knowledge base yang disisipkan ke prompt AI: template, data kendaraan/pegawai, data aula (+ID), bidang, dan jabatan.
  */
 class KnowledgeBase
 {
@@ -63,10 +63,12 @@ class KnowledgeBase
 
     public function dynamic(): string
     {
-        return Cache::remember('chatbot:kb:dynamic', self::CACHE_TTL_KB, function () {
+        // [FIX] Ubah nama cache key (tambahkan ':v2') agar sistem membuang cache lama yang masih berisi "ahan".
+        return Cache::remember('chatbot:kb:dynamic:v2', self::CACHE_TTL_KB, function () {
             $kb = [];
 
-            $vehicles = Kendaraan::with(['pajakTahunanAktif', 'pajakLimaTahunanAktif'])
+            // [FIX] Panggil relasi 'user' agar bisa baca nama dari sistem
+            $vehicles = Kendaraan::with(['pajakTahunanAktif', 'pajakLimaTahunanAktif', 'user'])
                 ->limit(self::KB_MAX_VEHICLES)
                 ->get();
 
@@ -77,9 +79,17 @@ class KnowledgeBase
                     if ($k->merk) {
                         $line .= " ({$k->merk})";
                     }
-                    if ($k->pemakai) {
-                        $line .= " — pemakai: {$k->pemakai}";
+                    
+                    // [FIX] Logika baru: utamakan nama dari relasi user, jika kosong baru pakai isi manual
+                    $namaUser = $k->user?->name;
+                    $namaManual = $k->pemakai;
+                    
+                    if ($namaUser) {
+                        $line .= " — pemakai: {$namaUser} (User Sistem)";
+                    } elseif ($namaManual) {
+                        $line .= " — pemakai: {$namaManual} (Manual)";
                     }
+
                     if ($k->unit_kerja) {
                         $line .= " — unit: {$k->unit_kerja}";
                     }
@@ -105,7 +115,37 @@ class KnowledgeBase
                 }
             }
 
-            // [FIX] Sertakan ID aula supaya AI bisa mengisi parameter aula_id pada tool booking
+            // [FIX] Tambahkan daftar BIDANG unik untuk keperluan absensi
+            $bidangList = User::where('status', 'aktif')
+                ->whereNotNull('bidang')
+                ->where('bidang', '!=', '')
+                ->distinct()
+                ->pluck('bidang');
+            
+            if ($bidangList->isNotEmpty()) {
+                $kb[] = "\nDATA BIDANG AKTIF (untuk filter peserta absensi):";
+                foreach ($bidangList as $b) {
+                    $kb[] = "- " . strtoupper(trim($b));
+                }
+                $kb[] = "- TANPA BIDANG";
+            }
+
+            // [FIX] Tambahkan daftar JABATAN unik untuk keperluan absensi
+            $jabatanList = User::where('status', 'aktif')
+                ->whereNotNull('jabatan')
+                ->where('jabatan', '!=', '')
+                ->distinct()
+                ->pluck('jabatan');
+            
+            if ($jabatanList->isNotEmpty()) {
+                $kb[] = "\nDATA JABATAN AKTIF (untuk filter peserta absensi):";
+                foreach ($jabatanList as $j) {
+                    $kb[] = "- " . strtoupper(trim($j));
+                }
+                $kb[] = "- TANPA JABATAN";
+            }
+
+            // Sertakan ID aula supaya AI bisa mengisi parameter aula_id pada tool booking
             $aulas = Aula::all(['id', 'nama', 'lokasi']);
             if ($aulas->isNotEmpty()) {
                 $kb[] = "\nDATA AULA (aula_id untuk booking tertulis sebagai ID):";
@@ -120,7 +160,7 @@ class KnowledgeBase
     }
 
     /**
-     * [FIX] Knowledge base ringkas khusus aula (+ID), dipakai saat user berniat melakukan aksi
+     * Knowledge base ringkas khusus aula (+ID), dipakai saat user berniat melakukan aksi
      * supaya AI selalu tahu aula_id tanpa memuat seluruh data kendaraan/pegawai.
      */
     public function aula(): string
@@ -186,10 +226,17 @@ class KnowledgeBase
                 $out .= "\n\n=== DATA DATABASE ===\n".$dynamic;
             }
         } else {
-            // [FIX] Tools selalu aktif -> AI SELALU perlu tahu daftar aula + ID agar bisa mengisi aula_id
+            // Tools selalu aktif -> AI SELALU perlu tahu daftar aula + ID agar bisa mengisi aula_id
+            // Ditambah data bidang & jabatan untuk absensi
             $aulaKb = $this->aula();
             if ($aulaKb !== '') {
                 $out .= "\n\n=== DATA DATABASE ===\n".$aulaKb;
+            }
+            
+            // Ambil data bidang & jabatan secara langsung (tanpa data kendaraan/pegawai lengkap)
+            $bidangList = User::where('status', 'aktif')->whereNotNull('bidang')->where('bidang', '!=', '')->distinct()->pluck('bidang');
+            if ($bidangList->isNotEmpty()) {
+                $out .= "\n\nDATA BIDANG AKTIF (untuk filter peserta absensi):\n- " . $bidangList->map(fn($b) => strtoupper(trim($b)))->implode("\n- ") . "\n- TANPA BIDANG";
             }
         }
 

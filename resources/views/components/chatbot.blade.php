@@ -1,71 +1,189 @@
 {{-- resources/views/components/chatbot.blade.php --}}
-{{-- Chatbot AI — WhatsApp Style + Menu Cepat + Fullscreen + Resize --}}
+{{-- Chatbot AI — Modern Neutral + Aksen Indigo + Typewriter Effect --}}
 
 @once
 <style>
     /* ═══════════════════════════════════════════════════════════ */
+    /* PALET WARNA — Netral slate + aksen indigo                     */
+    /* ═══════════════════════════════════════════════════════════ */
+    #chatbot-bubble,
+    #chatbot-toggle {
+        --cb-accent:        #6366f1;
+        --cb-accent-hover:  #4f46e5;
+        --cb-accent-soft:   rgba(99, 102, 241, 0.1);
+        --cb-accent-ring:   rgba(99, 102, 241, 0.25);
+        --cb-text:          #0f172a;
+        --cb-text-muted:    #64748b;
+        --cb-bg-chat:       #f8fafc;
+        --cb-surface:       #ffffff;
+        --cb-surface-hover: #f1f5f9;
+        --cb-border:        #e2e8f0;
+    }
+    .dark #chatbot-bubble,
+    .dark #chatbot-toggle {
+        --cb-accent:        #818cf8;
+        --cb-accent-hover:  #a5b4fc;
+        --cb-accent-soft:   rgba(129, 140, 248, 0.12);
+        --cb-accent-ring:   rgba(129, 140, 248, 0.3);
+        --cb-text:          #f1f5f9;
+        --cb-text-muted:    #94a3b8;
+        --cb-bg-chat:       #0f172a;
+        --cb-surface:       #1e293b;
+        --cb-surface-hover: #334155;
+        --cb-border:        #334155;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ */
     /* BUBBLE PESAN                                                  */
     /* ═══════════════════════════════════════════════════════════ */
     .chatbot-bg {
-        background-color: #ECE5DD;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><path fill='%23d9cdbf' fill-opacity='0.35' d='M30 5l2 3-2 3-2-3zM10 20l2 3-2 3-2-3zM50 20l2 3-2 3-2-3zM30 40l2 3-2 3-2-3zM15 50l2 3-2 3-2-3zM45 50l2 3-2 3-2-3z'/></svg>");
+        background: var(--cb-bg-chat);
+        position: relative;
     }
-    .chatbot-row-bot  { display: flex; justify-content: flex-start; }
+    .chatbot-bg::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 1px 1px, var(--cb-border) 1px, transparent 0);
+        background-size: 22px 22px;
+        pointer-events: none;
+        mask-image: linear-gradient(180deg, transparent 0%, black 15%, black 85%, transparent 100%);
+        -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 15%, black 85%, transparent 100%);
+        opacity: 0.4;
+    }
+
+    .chatbot-row-bot  { display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px; }
     .chatbot-row-user { display: flex; justify-content: flex-end; }
 
+    /* ── Avatar bot ── */
+    .chatbot-bot-avatar {
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--cb-surface);
+        border: 1px solid var(--cb-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+        overflow: hidden;
+        padding: 5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .chatbot-bot-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    /* ── Bubble ── */
     .chatbot-bubble-bot,
     .chatbot-bubble-user {
         position: relative;
-        max-width: 85%;
-        border-radius: 0.5rem;
-        padding: 0.5rem 0.75rem;
+        max-width: 82%;
+        border-radius: 1rem;
+        padding: 0.65rem 0.9rem 0.45rem;
         font-size: 0.875rem;
-        color: #1f2937;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        line-height: 1.5;
+        animation: chatbot-pop 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes chatbot-pop {
+        from { opacity: 0; transform: translateY(6px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
     }
     .chatbot-bubble-bot {
-        border-top-left-radius: 0;
-        background: #ffffff;
-    }
-    .chatbot-bubble-bot::before {
-        content: '';
-        position: absolute;
-        left: -8px;
-        top: 0;
-        border-top: 10px solid transparent;
-        border-right: 10px solid #ffffff;
+        background: var(--cb-surface);
+        color: var(--cb-text);
+        border: 1px solid var(--cb-border);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        border-bottom-left-radius: 0.25rem;
     }
     .chatbot-bubble-user {
-        border-top-right-radius: 0;
-        background: #DCF8C6;
-    }
-    .chatbot-bubble-user::before {
-        content: '';
-        position: absolute;
-        right: -8px;
-        top: 0;
-        border-top: 10px solid transparent;
-        border-left: 10px solid #DCF8C6;
+        background: var(--cb-accent);
+        color: #ffffff;
+        border-bottom-right-radius: 0.25rem;
+        box-shadow: 0 2px 8px -2px var(--cb-accent-ring);
     }
 
     .chatbot-text {
         white-space: pre-wrap;
         word-break: break-word;
-        padding-right: 3rem;
+        padding-right: 4.5rem;
     }
     .chatbot-meta {
-        margin-top: 0.125rem;
+        margin-top: 0.25rem;
         display: flex;
         align-items: center;
         justify-content: flex-end;
         gap: 0.25rem;
         font-size: 10px;
-        color: #6b7280;
+        font-weight: 500;
+        color: var(--cb-text-muted);
+        letter-spacing: 0.02em;
+        opacity: 0.75;
     }
+    .chatbot-bubble-user .chatbot-meta { color: rgba(255, 255, 255, 0.8); opacity: 1; }
     .chatbot-check {
-        width: 14px;
-        height: 13px;
-        color: #0ea5e9;
+        width: 13px;
+        height: 12px;
+        color: #ffffff;
+    }
+
+    /* ── Tombol copy ── */
+    .chatbot-copy-btn {
+        position: absolute;
+        top: 0.375rem;
+        right: 0.375rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: transparent;
+        border: none;
+        color: var(--cb-text-muted);
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.18s ease;
+        z-index: 2;
+    }
+    .chatbot-bubble-bot:hover .chatbot-copy-btn,
+    .chatbot-bubble-user:hover .chatbot-copy-btn { opacity: 1; }
+    .chatbot-bubble-bot .chatbot-copy-btn:hover {
+        background: var(--cb-surface-hover);
+        color: var(--cb-accent);
+    }
+    .chatbot-bubble-user .chatbot-copy-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+    .chatbot-copy-btn:active { transform: scale(0.9); }
+    .chatbot-copy-btn svg { width: 14px; height: 14px; }
+    .chatbot-copy-btn.is-copied {
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.12);
+        opacity: 1;
+    }
+    @media (max-width: 640px) {
+        .chatbot-copy-btn { opacity: 0.5; }
+    }
+
+    /* ── Kursor Typewriter ── */
+    .chatbot-typewriter-cursor {
+        display: inline-block;
+        width: 5px;
+        height: 14px;
+        background-color: var(--cb-accent);
+        margin-left: 2px;
+        vertical-align: middle;
+        animation: chatbot-blink 0.8s infinite;
+        border-radius: 1px;
+    }
+    @keyframes chatbot-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
     }
 
     /* ═══════════════════════════════════════════════════════════ */
@@ -74,55 +192,103 @@
     .chatbot-quick-wrapper {
         max-width: 100% !important;
         padding: 0 !important;
-        background: #ffffff;
+        background: var(--cb-surface);
+        border: 1px solid var(--cb-border);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        border-bottom-left-radius: 0.25rem;
     }
-    .chatbot-quick-label {
-        padding: 0.625rem 0.75rem 0.25rem;
-        font-size: 0.75rem;
+    .chatbot-quick-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8125rem;
         font-weight: 600;
-        color: #6b7280;
+        padding: 0.5rem 0.85rem;
+        border-radius: 9999px;
+        background: var(--cb-accent);
+        color: #ffffff;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px -2px var(--cb-accent-ring);
+        transition: all 0.2s ease;
+        margin: 0.625rem 0.75rem;
     }
-    .chatbot-quick-menu {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.375rem;
-        padding: 0.5rem 0.75rem 0.75rem;
+    .chatbot-quick-toggle:hover {
+        background: var(--cb-accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px var(--cb-accent-ring);
+    }
+    .chatbot-quick-toggle:active { transform: scale(0.97); }
+    .chatbot-quick-toggle .chatbot-chevron {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.25s ease;
+    }
+    .chatbot-quick-toggle.is-open .chatbot-chevron { transform: rotate(180deg); }
+
+    .chatbot-quick-list {
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.25s ease,
+                    padding 0.3s ease;
+        padding: 0 0.75rem;
+    }
+    .chatbot-quick-list.is-open {
+        max-height: 600px;
+        opacity: 1;
+        padding: 0 0.75rem 0.75rem;
     }
     .chatbot-quick-btn {
         font-size: 0.75rem;
-        padding: 0.375rem 0.625rem;
-        border-radius: 9999px;
-        background: #ffffff;
-        color: #075E54;
-        border: 1px solid #075E54;
+        padding: 0.45rem 0.75rem;
+        border-radius: 0.5rem;
+        background: var(--cb-surface-hover);
+        color: var(--cb-text);
+        border: 1px solid var(--cb-border);
         cursor: pointer;
-        transition: all 0.15s;
+        transition: all 0.18s ease;
         font-weight: 500;
         line-height: 1.2;
+        text-align: left;
     }
-    .chatbot-quick-btn:hover { background: #075E54; color: #ffffff; }
-    .chatbot-quick-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .chatbot-quick-btn:hover {
+        background: var(--cb-accent-soft);
+        color: var(--cb-accent);
+        border-color: var(--cb-accent);
+    }
+    .chatbot-quick-btn:active { transform: scale(0.98); }
+    .chatbot-quick-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* ═══════════════════════════════════════════════════════════ */
-    /* TOMBOL HEADER & RESIZE HANDLE                                 */
+        /* ═══════════════════════════════════════════════════════════ */
+    /* HEADER BUTTONS (Diperbesar & Dibuat Bold)                     */
     /* ═══════════════════════════════════════════════════════════ */
     .chatbot-header-btn {
         display: flex;
-        height: 28px;
-        width: 28px;
+        height: 36px; /* Diperbesar dari 30px */
+        width: 36px;  /* Diperbesar dari 30px */
         align-items: center;
         justify-content: center;
-        border-radius: 9999px;
-        color: rgba(255, 255, 255, 0.85);
+        border-radius: 8px;
+        color: var(--cb-text-muted);
         transition: all 0.15s;
         cursor: pointer;
-        background: transparent;
-        border: none;
+        background: var(--cb-surface-hover); /* Kasih background abu halus */
+        border: 1px solid var(--cb-border);  /* Kasih border tipis */
         padding: 0;
     }
-    .chatbot-header-btn:hover { background: rgba(255, 255, 255, 0.15); color: #ffffff; }
+    .chatbot-header-btn:hover {
+        background: var(--cb-accent-soft);
+        color: var(--cb-accent);
+        border-color: var(--cb-accent-ring);
+    }
     .chatbot-header-btn:active { transform: scale(0.9); }
-    .chatbot-header-btn svg { width: 16px; height: 16px; }
+    .chatbot-header-btn svg { 
+        width: 18px; /* Icon diperbesar */
+        height: 18px; 
+        stroke-width: 2.5; /* Garis icon dipertebal */
+    }
 
     #chatbot-resize-handle {
         position: absolute;
@@ -132,10 +298,11 @@
         height: 20px;
         cursor: nwse-resize;
         z-index: 10;
-        color: rgba(7, 94, 84, 0.3);
+        color: var(--cb-text-muted);
         transition: color 0.15s;
+        opacity: 0.5;
     }
-    #chatbot-resize-handle:hover { color: rgba(7, 94, 84, 0.8); }
+    #chatbot-resize-handle:hover { color: var(--cb-accent); opacity: 1; }
     #chatbot-resize-handle::before {
         content: '';
         position: absolute;
@@ -148,24 +315,70 @@
     }
 
     /* ═══════════════════════════════════════════════════════════ */
-    /* TOMBOL FLOATING — z-index TINGGI biar gak ketimpa            */
+    /* TOMBOL FLOATING (TOGGLE)                                      */
     /* ═══════════════════════════════════════════════════════════ */
     #chatbot-toggle {
         position: fixed !important;
         bottom: 1.5rem !important;
         right: 1.5rem !important;
-        z-index: 2147483647 !important; /* nilai maksimal int32 */
+        z-index: 2147483647 !important;
+        background: var(--cb-accent) !important;
+        box-shadow: 0 8px 24px -4px var(--cb-accent-ring),
+                    0 4px 12px -4px rgba(0, 0, 0, 0.15) !important;
+        padding: 0 !important;
+        overflow: visible; /* biar efek pulse ring ga kepotong */
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    /* Efek Pulse Ring (Gelombang) */
+    #chatbot-toggle::before,
+    #chatbot-toggle::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: var(--cb-accent);
+        z-index: -1;
+        opacity: 0.4;
+        pointer-events: none;
+        animation: chatbot-pulse 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #chatbot-toggle::after {
+        animation-delay: 1.5s;
+    }
+    @keyframes chatbot-pulse {
+        0% { transform: scale(1); opacity: 0.4; }
+        100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    #chatbot-toggle:hover {
+        background: var(--cb-accent-hover) !important;
+        box-shadow: 0 12px 28px -4px var(--cb-accent-ring) !important;
+        transform: scale(1.1) rotate(5deg); /* Efek goyang dikit */
+    }
+    
+    /* Gambar Logo di dalam toggle */
+    #chatbot-toggle img {
+        width: 62%;
+        height: 62%;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+        transition: transform 0.3s ease;
+    }
+    #chatbot-toggle:hover img {
+        transform: scale(1.1);
     }
 
     /* ═══════════════════════════════════════════════════════════ */
-    /* BUBBLE CONTAINER — state default                              */
+    /* BUBBLE CONTAINER                                              */
     /* ═══════════════════════════════════════════════════════════ */
     #chatbot-bubble {
         position: fixed;
         bottom: 6.5rem;
         right: 1.5rem;
         z-index: 2147483646;
-        width: 24rem;
+        width: 25rem;
         max-width: calc(100vw - 2rem);
         transform-origin: bottom right;
         opacity: 1;
@@ -186,21 +399,25 @@
         pointer-events: none;
     }
     @media (prefers-reduced-motion: reduce) {
-        #chatbot-bubble { transition: none; }
+        #chatbot-bubble, .chatbot-bubble-bot, .chatbot-bubble-user { transition: none; animation: none; }
+        .chatbot-quick-list { transition: none; }
+        #chatbot-toggle::before, #chatbot-toggle::after { animation: none; display: none; }
     }
 
     #chatbot-container {
         display: flex;
         flex-direction: column;
-        height: 560px;
+        height: 600px;
         max-height: calc(100vh - 8rem);
         overflow: hidden;
         border-radius: 1rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        background: #ffffff;
+        box-shadow:
+            0 20px 40px -12px rgba(0, 0, 0, 0.15),
+            0 8px 16px -8px rgba(0, 0, 0, 0.1);
+        background: var(--cb-surface);
+        border: 1px solid var(--cb-border);
     }
 
-    /* State fullscreen */
     #chatbot-bubble.chatbot-fullscreen {
         top: 1rem !important;
         left: 1rem !important;
@@ -214,6 +431,120 @@
         height: 100% !important;
         max-height: none !important;
     }
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* HEADER                                                        */
+    /* ═══════════════════════════════════════════════════════════ */
+    .chatbot-header {
+        position: relative;
+        background: var(--cb-surface);
+        border-bottom: 1px solid var(--cb-border);
+    }
+    .chatbot-header-content {
+        position: relative;
+        z-index: 1;
+    }
+    .chatbot-header-logo {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 42px;
+        width: 42px;
+        border-radius: 10px;
+        background: var(--cb-accent-soft);
+        border: 1px solid var(--cb-accent-ring);
+        flex-shrink: 0;
+        overflow: hidden;
+        padding: 5px;
+    }
+    .chatbot-header-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    .chatbot-online-dot {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #10b981;
+        border: 2px solid var(--cb-surface);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        animation: chatbot-online-pulse 2s ease-in-out infinite;
+    }
+    @keyframes chatbot-online-pulse {
+        0%, 100% { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3); }
+        50%      { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.1); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* INPUT AREA                                                    */
+    /* ═══════════════════════════════════════════════════════════ */
+    .chatbot-input-wrapper {
+        background: var(--cb-surface);
+        border-top: 1px solid var(--cb-border);
+        padding: 0.75rem;
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+    .chatbot-input-box {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        border-radius: 1rem;
+        background: var(--cb-bg-chat);
+        border: 1.5px solid var(--cb-border);
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+    .chatbot-input-box:focus-within {
+        background: var(--cb-surface);
+        border-color: var(--cb-accent);
+        box-shadow: 0 0 0 3px var(--cb-accent-soft);
+    }
+    #chatbot-input {
+        flex: 1;
+        resize: none;
+        background: transparent;
+        border: none;
+        padding: 0.375rem 0;
+        font-size: 0.875rem;
+        color: var(--cb-text);
+        outline: none;
+        line-height: 1.4;
+        max-height: 100px;
+    }
+    #chatbot-input::placeholder { color: var(--cb-text-muted); opacity: 0.7; }
+
+    #chatbot-send {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 42px;
+        width: 42px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: var(--cb-accent);
+        color: #ffffff;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px -2px var(--cb-accent-ring);
+        transition: all 0.18s ease;
+    }
+    #chatbot-send:hover {
+        background: var(--cb-accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px var(--cb-accent-ring);
+    }
+    #chatbot-send:active { transform: translateY(0) scale(0.96); }
+    #chatbot-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    #chatbot-send svg { width: 18px; height: 18px; }
+
+    #chatbot-typing .chatbot-bubble-bot { padding: 0.75rem 1rem; }
 
     /* ═══════════════════════════════════════════════════════════ */
     /* RESPONSIF HP                                                  */
@@ -234,13 +565,13 @@
             height: 100% !important;
             max-height: none !important;
             border-radius: 0 !important;
+            border: none !important;
         }
         #chatbot-drag-handle { cursor: default !important; }
         #chatbot-resize-handle { display: none !important; }
-        .chatbot-quick-btn { font-size: 0.7rem; padding: 0.3rem 0.55rem; }
-        .chatbot-bubble-bot, .chatbot-bubble-user { max-width: 92%; font-size: 0.8125rem; }
+        .chatbot-bubble-bot, .chatbot-bubble-user { max-width: 88%; font-size: 0.8125rem; }
+        .chatbot-quick-btn { font-size: 0.7rem; padding: 0.4rem 0.65rem; }
 
-        /* Tombol tetap di kanan bawah, z-index tinggi */
         #chatbot-toggle {
             bottom: 1.25rem !important;
             right: 1.25rem !important;
@@ -251,16 +582,13 @@
 @endonce
 
 {{-- ═══════════════════════════════════════════════════════════ --}}
-{{-- TOMBOL FLOATING                                              --}}
+{{-- TOMBOL FLOATING — pakai LOGO BAPELIT                        --}}
 {{-- ═══════════════════════════════════════════════════════════ --}}
 <button id="chatbot-toggle"
         type="button"
         title="Tanya Asisten AI"
-        class="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-xl transition-transform duration-200 hover:scale-110 active:scale-95"
-        style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);">
-    <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-    </svg>
+        class="flex h-14 w-14 items-center justify-center rounded-full text-white transition-transform duration-200 active:scale-95">
+    <img src="{{ asset('image/logo.png') }}" alt="Pojok Bapelit" class="h-8 w-8 object-contain">
 </button>
 
 {{-- ═══════════════════════════════════════════════════════════ --}}
@@ -271,22 +599,22 @@
 
         {{-- Header --}}
         <div id="chatbot-drag-handle"
-             class="relative flex cursor-move select-none items-center gap-3 px-4 py-3 pr-24"
-             style="background: #075E54;">
-            <div class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-400 ring-2"
-                      style="--tw-ring-color: #075E54;"></span>
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-white">Admin</p>
-                <p class="truncate text-[11px] text-white/70">online</p>
+             class="chatbot-header relative flex cursor-move select-none items-center gap-3 px-4 py-3 pr-24">
+            <div class="chatbot-header-content flex items-center gap-3 w-full">
+                <div class="chatbot-header-logo">
+                    <img src="{{ asset('image/logo.png') }}" alt="Pojok Bapelit">
+                    <span class="chatbot-online-dot"></span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-bold" style="color: var(--cb-text);">Asisten AI Bapelit</p>
+                    <p class="truncate text-[11px] flex items-center gap-1" style="color: var(--cb-text-muted);">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Online — siap membantu
+                    </p>
+                </div>
             </div>
 
-            <div class="absolute right-2 top-2 flex items-center gap-0.5">
+            <div class="absolute right-2 top-2 flex items-center gap-1 chatbot-header-content">
                 <button type="button"
                         id="chatbot-fullscreen-btn"
                         onclick="toggleChatbotFullscreen()"
@@ -317,23 +645,18 @@
 
         {{-- Messages --}}
         <div id="chatbot-messages"
-             class="chatbot-bg flex-1 space-y-2 overflow-y-auto p-3"></div>
+             class="chatbot-bg flex-1 space-y-2.5 overflow-y-auto p-3"></div>
 
         {{-- Input --}}
-        <form id="chatbot-form"
-              class="flex items-end gap-2 px-2 py-2"
-              style="background: #f0f0f0;">
-            <div class="flex flex-1 items-end rounded-3xl bg-white px-3 py-1.5 shadow-sm">
+        <form id="chatbot-form" class="chatbot-input-wrapper">
+            <div class="chatbot-input-box">
                 <textarea id="chatbot-input"
                           rows="1"
-                          placeholder="Ketik pesan atau pilih menu..."
-                          class="flex-1 resize-none bg-transparent py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                          placeholder="Tanya apa saja..."
                           maxlength="1000"></textarea>
             </div>
-            <button type="submit" id="chatbot-send"
-                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow-md transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
-                    style="background: #25D366;">
-                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <button type="submit" id="chatbot-send" aria-label="Kirim pesan">
+                <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
             </button>
@@ -379,6 +702,7 @@
         const menusUrl    = '{{ route('chatbot.menus') }}';
         const templateUrl = '{{ route('chatbot.template') }}';
         const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content;
+        const LOGO_URL    = '{{ asset('image/logo.png') }}';
 
         const MIN_W = 320;
         const MIN_H = 400;
@@ -390,6 +714,8 @@
         const CHAT_STORAGE_KEY = 'pojok_bapelit_chatbot_history';
         const CHAT_HISTORY_TTL = 24 * 60 * 60 * 1000;
         const isMobile   = () => window.matchMedia('(max-width: 640px)').matches;
+
+        const BOT_AVATAR_HTML = `<img src="${LOGO_URL}" alt="">`;
 
         function nowTime() {
             const d = new Date();
@@ -414,7 +740,8 @@
                     return;
                 }
 
-                saved.history.forEach((message) => addMessage(message.text, message.isUser, message.time, false));
+                // Saat restore history, langsung tampilkan tanpa animasi ketik
+                saved.history.forEach((message) => addMessage(message.text, message.isUser, message.time, false, true));
                 messages.scrollTop = messages.scrollHeight;
             } catch (error) {
                 localStorage.removeItem(CHAT_STORAGE_KEY);
@@ -422,7 +749,6 @@
             }
         }
 
-        // Hapus inline style — biar CSS class yang atur
         function clearInlineStyles() {
             bubble.removeAttribute('style');
             container.removeAttribute('style');
@@ -466,9 +792,7 @@
             iconMinimize.classList.toggle('hidden', !isFullscreen);
             fsBtn.title = isFullscreen ? 'Kecilkan' : 'Perbesar';
 
-            // Hapus inline style biar CSS class yang atur
             clearInlineStyles();
-
             setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 100);
         };
 
@@ -489,7 +813,6 @@
 
             isDragging = true;
             const rect = bubble.getBoundingClientRect();
-            // Set inline style biar bisa drag
             Object.assign(bubble.style, {
                 position: 'fixed',
                 top: rect.top + 'px',
@@ -620,9 +943,77 @@
         });
 
         // ═══════════════════════════════════════════════════════
+        // HELPER: COPY KE CLIPBOARD
+        // ═══════════════════════════════════════════════════════
+        async function copyToClipboard(text, btnEl) {
+            const originalHTML = btnEl.innerHTML;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.focus();
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                btnEl.classList.add('is-copied');
+                btnEl.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>`;
+                setTimeout(() => {
+                    btnEl.classList.remove('is-copied');
+                    btnEl.innerHTML = originalHTML;
+                }, 1500);
+            } catch (err) {
+                console.warn('[Chatbot] Gagal copy:', err);
+                btnEl.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>`;
+                setTimeout(() => { btnEl.innerHTML = originalHTML; }, 1500);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // EFFECT: TYPEWRITER
+        // ═══════════════════════════════════════════════════════
+        function typeWriter(element, text, speed = 15, callback) {
+            let i = 0;
+            element.textContent = '';
+            
+            // Buat elemen kursor
+            const cursor = document.createElement('span');
+            cursor.className = 'chatbot-typewriter-cursor';
+            element.appendChild(cursor);
+
+            function type() {
+                if (i < text.length) {
+                    // Sisipkan huruf sebelum kursor
+                    cursor.insertAdjacentText('beforebegin', text.charAt(i));
+                    i++;
+                    // Auto scroll
+                    messages.scrollTop = messages.scrollHeight;
+                    setTimeout(type, speed);
+                } else {
+                    // Selesai: hapus kursor & panggil callback
+                    cursor.remove();
+                    if (callback) callback();
+                }
+            }
+            type();
+        }
+
+        // ═══════════════════════════════════════════════════════
         // RENDER BUBBLE PESAN
         // ═══════════════════════════════════════════════════════
-        function addMessage(text, isUser, time = nowTime(), persist = true) {
+        // isInstant = true untuk history (tanpa animasi ketik)
+        function addMessage(text, isUser, time = nowTime(), persist = true, isInstant = false) {
             const row = document.createElement('div');
             row.className = isUser ? 'chatbot-row-user' : 'chatbot-row-bot';
             row.dataset.chatMessage = '1';
@@ -630,13 +1021,43 @@
             row.dataset.chatUser = isUser ? '1' : '0';
             row.dataset.chatTime = time;
 
+            if (!isUser) {
+                const avatar = document.createElement('div');
+                avatar.className = 'chatbot-bot-avatar';
+                avatar.innerHTML = BOT_AVATAR_HTML;
+                row.appendChild(avatar);
+            }
+
             const b = document.createElement('div');
             b.className = isUser ? 'chatbot-bubble-user' : 'chatbot-bubble-bot';
 
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'chatbot-copy-btn';
+            copyBtn.title = 'Copy teks';
+            copyBtn.setAttribute('aria-label', 'Copy teks');
+            copyBtn.innerHTML = `
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>`;
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                copyToClipboard(text, copyBtn); // Copy text asli
+            });
+            b.appendChild(copyBtn);
+
             const textEl = document.createElement('div');
             textEl.className = 'chatbot-text';
-            textEl.textContent = text;
-            b.appendChild(textEl);
+            
+            // Logic: Jika dari Bot & bukan instant, pakai Typewriter
+            if (!isUser && !isInstant) {
+                b.appendChild(textEl);
+                typeWriter(textEl, text, 15);
+            } else {
+                textEl.textContent = text;
+                b.appendChild(textEl);
+            }
 
             const meta = document.createElement('div');
             meta.className = 'chatbot-meta';
@@ -659,13 +1080,18 @@
             row.className = 'chatbot-row-bot';
             row.id = 'chatbot-typing';
 
+            const avatar = document.createElement('div');
+            avatar.className = 'chatbot-bot-avatar';
+            avatar.innerHTML = BOT_AVATAR_HTML;
+            row.appendChild(avatar);
+
             const b = document.createElement('div');
             b.className = 'chatbot-bubble-bot';
             b.innerHTML = `
                 <div class="flex items-center gap-1 py-1">
-                    <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay:0ms"></span>
-                    <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay:150ms"></span>
-                    <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay:300ms"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-indigo-400" style="animation-delay:0ms"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-indigo-400" style="animation-delay:150ms"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-indigo-400" style="animation-delay:300ms"></span>
                 </div>`;
             row.appendChild(b);
             messages.appendChild(row);
@@ -677,7 +1103,7 @@
         }
 
         // ═══════════════════════════════════════════════════════
-        // MENU CEPAT
+        // MENU CEPAT (COLLAPSIBLE — "Permintaan Populer")
         // ═══════════════════════════════════════════════════════
         async function loadMenus() {
             try {
@@ -700,16 +1126,29 @@
             row.className = 'chatbot-row-bot';
             row.id = 'chatbot-quick-menu';
 
+            const avatar = document.createElement('div');
+            avatar.className = 'chatbot-bot-avatar';
+            avatar.innerHTML = BOT_AVATAR_HTML;
+            row.appendChild(avatar);
+
             const wrapper = document.createElement('div');
             wrapper.className = 'chatbot-bubble-bot chatbot-quick-wrapper';
 
-            const label = document.createElement('div');
-            label.className = 'chatbot-quick-label';
-            label.textContent = '📌 Pilih topik cepat:';
-            wrapper.appendChild(label);
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'chatbot-quick-toggle';
+            toggleBtn.innerHTML = `
+                <svg class="chatbot-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+                <span>✨ Permintaan Populer</span>
+            `;
 
             const menuBox = document.createElement('div');
-            menuBox.className = 'chatbot-quick-menu';
+            menuBox.className = 'chatbot-quick-list';
+            menuBox.style.display = 'flex';
+            menuBox.style.flexDirection = 'column';
+            menuBox.style.gap = '0.375rem';
 
             menus.forEach(m => {
                 const btn = document.createElement('button');
@@ -721,6 +1160,13 @@
                 menuBox.appendChild(btn);
             });
 
+            toggleBtn.addEventListener('click', () => {
+                const isOpen = menuBox.classList.toggle('is-open');
+                toggleBtn.classList.toggle('is-open', isOpen);
+                setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 320);
+            });
+
+            wrapper.appendChild(toggleBtn);
             wrapper.appendChild(menuBox);
             row.appendChild(wrapper);
             messages.appendChild(row);
@@ -792,6 +1238,7 @@
                 });
                 const data = await res.json();
                 removeTyping();
+                // Parameter ke-4 = persist, ke-5 = isInstant (false agar bot pakai animasi ngetik)
                 addMessage(res.ok ? (data.reply || 'Maaf, saya tidak mengerti.') : ('⚠️ ' + (data.error || 'Gagal menghubungi AI')), false);
             } catch (err) {
                 removeTyping();

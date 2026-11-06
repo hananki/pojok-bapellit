@@ -47,7 +47,8 @@ class VehicleAnswer
         $normalize = static fn (string $value): string => preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower($value)) ?? '';
         $normalizedQueryTokens = $meaningfulTokens->map($normalize)->filter()->values();
 
-        $vehicles = Kendaraan::with(['pajakTahunanAktif', 'pajakLimaTahunanAktif'])->get();
+        // [FIX] Panggil relasi 'user' agar bisa baca nama dari sistem
+        $vehicles = Kendaraan::with(['pajakTahunanAktif', 'pajakLimaTahunanAktif', 'user'])->get();
 
         $matches = $vehicles->filter(function (Kendaraan $item) use ($normalizedQueryTokens, $normalize): bool {
             if ($normalizedQueryTokens->isEmpty()) {
@@ -55,8 +56,12 @@ class VehicleAnswer
             }
 
             $plat = $normalize((string) $item->plat_nomor);
-            $pemakai = $normalize((string) $item->pemakai);
             $merk = $normalize((string) $item->merk);
+            
+            // [FIX] Gabungkan nama dari relasi user DAN dari isi manual untuk pencarian
+            $namaUser = $item->user?->name ?? '';
+            $pemakaiManual = $item->pemakai ?? '';
+            $pemakai = $normalize($namaUser . ' ' . $pemakaiManual);
 
             foreach ($normalizedQueryTokens as $token) {
                 if ($plat !== '' && preg_match('/\b'.preg_quote($token, '/').'\b/u', $plat)) {
@@ -80,10 +85,24 @@ class VehicleAnswer
         }
 
         $answers = $matches->map(function (Kendaraan $vehicle): string {
-            $answer = "Plat {$vehicle->plat_nomor}: dipakai oleh ".($vehicle->pemakai ?: 'belum diisi');
-            if ($vehicle->merk) {
-                $answer .= ", merk {$vehicle->merk}";
+            // [FIX] Ambil nama dari user sistem (prioritas) atau isi manual
+            $namaUser = $vehicle->user?->name;
+            $pemakaiManual = $vehicle->pemakai;
+            
+            $pemakaiStr = 'belum diisi';
+            if ($namaUser) {
+                $pemakaiStr = $namaUser; // Hanya tampilkan nama
+            } elseif ($pemakaiManual) {
+                $pemakaiStr = $pemakaiManual; // Hanya tampilkan nama
             }
+
+            // Rangkai jawaban yang lebih lengkap
+            $answer = "Kendaraan plat {$vehicle->plat_nomor}";
+            if ($vehicle->merk) {
+                $answer .= " ({$vehicle->merk})";
+            }
+            $answer .= " dipakai oleh: {$pemakaiStr}";
+            
             if ($vehicle->unit_kerja) {
                 $answer .= ", unit {$vehicle->unit_kerja}";
             }

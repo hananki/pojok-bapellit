@@ -7,7 +7,18 @@
             @endforeach
             
             <!-- Pemakai dari User -->
-            <div x-data="{ useUser: {{ old('user_id', $kendaraan?->user_id) ? 'true' : 'false' }} }">
+            <div x-data="{ 
+                    useUser: {{ old('user_id', $kendaraan?->user_id) ? 'true' : 'false' }},
+                    updatePemakaiHidden(event) {
+                        const select = event.target;
+                        const selectedOption = select.options[select.selectedIndex];
+                        const userName = selectedOption.getAttribute('data-name');
+                        const hiddenInput = document.getElementById('pemakai_manual');
+                        if (hiddenInput && userName) {
+                            hiddenInput.value = userName; // Pindahkan nama user ke hidden input
+                        }
+                    }
+                }">
                 <label class="mb-2 block text-sm font-semibold text-slate-700">Pemakai</label>
                 <div class="mb-2 flex gap-4">
                     <label class="inline-flex items-center cursor-pointer">
@@ -15,14 +26,14 @@
                         <span class="ml-2 text-sm">Pilih dari User</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" name="pemakai_type" value="manual" @click="useUser = false" :checked="!useUser" class="text-indigo-600">
+                        <input type="radio" name="pemakai_type" value="manual" @click="useUser = false; document.getElementById('pemakai_manual').value = ''; document.getElementById('user_id').value = '';" :checked="!useUser" class="text-indigo-600">
                         <span class="ml-2 text-sm">Isi Manual</span>
                     </label>
                 </div>
                 
                 <!-- Dropdown User -->
                 <div x-show="useUser" x-cloak>
-                    <select id="user_id" name="user_id" @change="updatePemakai($event)" class="w-full rounded-xl border-slate-300 bg-white px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <select id="user_id" name="user_id" @change="updatePemakaiHidden($event)" class="w-full rounded-xl border-slate-300 bg-white px-4 py-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">-- Pilih User --</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" data-name="{{ $user->name }}" @selected(old('user_id', $kendaraan?->user_id) == $user->id)>
@@ -79,18 +90,6 @@
 
             function vehiclePhotoPreview() {
                 return { imageUrl: null, fileName: '', preview(event) { const file = event.target.files[0]; if (!file) return; if (this.imageUrl) URL.revokeObjectURL(this.imageUrl); this.imageUrl = URL.createObjectURL(file); this.fileName = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`; }, clear() { const input = document.getElementById('foto'); input.value = ''; if (this.imageUrl) URL.revokeObjectURL(this.imageUrl); this.imageUrl = null; this.fileName = ''; } };
-            }
-            
-            function updatePemakai(event) {
-                const select = event.target;
-                const selectedOption = select.options[select.selectedIndex];
-                const userName = selectedOption.getAttribute('data-name');
-                
-                // Update hidden pemakai field jika ada
-                const pemakaiInput = document.getElementById('pemakai');
-                if (pemakaiInput && userName) {
-                    pemakaiInput.value = userName;
-                }
             }
         </script>
         

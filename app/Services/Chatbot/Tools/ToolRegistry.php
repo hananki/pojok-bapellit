@@ -8,10 +8,6 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Daftar semua tool AI. Menggabungkan definisi tool dan menjalankan tool yang dipanggil AI.
- *
- * Menambah domain baru (misal: kendaraan, cuti):
- *   1. buat class XxxTools implements ToolGroup di folder ini
- *   2. tambahkan ke constructor di bawah
  */
 class ToolRegistry
 {
@@ -22,13 +18,16 @@ class ToolRegistry
         BookingTools $booking,
         AbsensiTools $absensi,
         SuratTools $surat,
+        AbsensiHistoryTools $absensiHistory,
     ) {
-        $this->groups = [$booking, $absensi, $surat];
+        $this->groups = [
+            $booking,
+            $absensi,
+            $surat,
+            $absensiHistory,
+        ];
     }
 
-    /**
-     * Semua definisi tool untuk dikirim ke Groq.
-     */
     public function definitions(): array
     {
         $all = [];
@@ -44,7 +43,10 @@ class ToolRegistry
     /**
      * Jalankan satu tool call dari AI.
      *
-     * @return array{0: string, 1: string} [hasil untuk AI, kalimat ringkas untuk user (fallback)]
+     * [FIX] SELALU kembalikan string JSON {success, message|error}
+     * agar GroqChat bisa mendeteksi kegagalan dengan konsisten.
+     *
+     * @return array{0: string, 1: string} [hasil JSON untuk AI, kalimat ringkas untuk user (fallback)]
      */
     public function run(string $name, array $arguments, ?Authenticatable $user): array
     {
@@ -52,27 +54,44 @@ class ToolRegistry
 
         try {
             if (! $user) {
-                // Semua aksi sistem butuh user yang sedang login
-                $result = 'Gagal: user belum login. Minta user untuk login terlebih dahulu sebelum melakukan aksi ini.';
+                $result = $this->fail(
+                    'User belum login. Minta user untuk login terlebih dahulu sebelum melakukan aksi ini.'
+                );
             } elseif (! $group) {
-                $result = "Fungsi tidak dikenal: {$name}";
+                $result = $this->fail("Fungsi tidak dikenal: {$name}");
             } else {
+                // Hasil dari tool group SUDAH berformat JSON (diperbaiki di BookingTools dst.)
                 $result = $group->run($name, $arguments, $user);
+
+                // [FIX] Pengaman: kalau tool masih return string mentah (mis. tool lama belum di-patch),
+                // bungkus jadi JSON sukses agar konsisten.
+                if (! $this->isJson($result)) {
+                    $result = $this->ok((string) $result);
+                }
             }
         } catch (ValidationException $e) {
-            $result = "Gagal menjalankan fungsi {$name}: data tidak valid — "
-                .collect($e->errors())->flatten()->implode('; ');
+            $errors = collect($e->errors())->flatten()->implode('; ');
+            $result = $this->fail("Data tidak valid — {$errors}");
         } catch (\Throwable $e) {
             Log::error('Tool call gagal', [
                 'function' => $name,
                 'arguments' => $arguments,
                 'message' => $e->getMessage(),
             ]);
-            $result = "Gagal menjalankan fungsi {$name}: ".$e->getMessage();
+            $result = $this->fail('Gagal menjalankan fungsi: '.$e->getMessage());
         }
 
         $result = (string) $result;
-        $summary = $group ? $group->describe($name, $arguments, $result) : $result;
+
+        // Summary untuk user (dipakai GroqChat sebagai fallback kalau follow-up AI gagal)
+        $summary = $group
+            ? $group->describe($name, $arguments, $result)
+            : $this->extractMessage($result);
+
+        // [FIX] Kalau summary masih berupa string JSON mentah, decode agar enak dibaca user
+        if ($this->isJson($summary)) {
+            $summary = $this->extractMessage($summary);
+        }
 
         return [$result, $summary];
     }
@@ -86,5 +105,46 @@ class ToolRegistry
         }
 
         return null;
+    }
+
+    // ── Helper JSON ────────────────────────────────────────────────
+
+    private function ok(string $message): string
+    {
+        return json_encode([
+            'success' => true,
+            'message' => $message,
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    private function fail(string $error): string
+    {
+        return json_encode([
+            'success' => false,
+            'error' => $error,
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    private function isJson(string $text): bool
+    {
+        if ($text === '') {
+            return false;
+        }
+        json_decode($text);
+        return json_last_error() === JSON_ERROR_NONE
+            && in_array($text[0] ?? '', ['{', '['], true);
+    }
+
+    /**
+     * Ambil pesan dari string JSON: {success, message} / {success, error}
+     * Fallback ke string asli kalau bukan JSON.
+     */
+    private function extractMessage(string $result): string
+    {
+        $data = json_decode($result, true);
+        if (is_array($data)) {
+            return (string) ($data['message'] ?? $data['error'] ?? $result);
+        }
+        return $result;
     }
 }

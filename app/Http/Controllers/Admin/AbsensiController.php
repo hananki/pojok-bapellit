@@ -290,9 +290,6 @@ class AbsensiController extends Controller
     /**
      * Halaman absensi 1 sesi
      */
-    /**
-     * Halaman absensi 1 sesi
-     */
     public function show(Request $request, int $id)
     {
         $sesi = AbsensiSesi::with('creator')->findOrFail($id);
@@ -317,7 +314,7 @@ class AbsensiController extends Controller
                     'detail_id' => $detail->id,
                     'status_kehadiran' => $detail->status_kehadiran,
                     'keterangan' => $detail->keterangan,
-                    'waktu_absen' => $detail->waktu_absen, // ✅ PASTIKAN ADA DI SINI
+                    'waktu_absen' => $detail->waktu_absen,
                 ];
             })
             ->sortBy('name')
@@ -481,7 +478,7 @@ class AbsensiController extends Controller
         $request->validate([
             'tanggal_dari' => 'required|date',
             'tanggal_ke' => 'required|date|after_or_equal:tanggal_dari',
-            'ids' => 'nullable|array', // Validasi untuk array ID yang dikirim frontend
+            'ids' => 'nullable|array',
             'ids.*' => 'integer|exists:absensi_sesi,id',
         ], [
             'tanggal_dari.required' => 'Tanggal "dari" wajib diisi.',
@@ -493,24 +490,20 @@ class AbsensiController extends Controller
         $tanggalDari = Carbon::parse($request->tanggal_dari)->startOfDay();
         $tanggalKe = Carbon::parse($request->tanggal_ke)->endOfDay();
 
-        // Ambil ID sesi yang dikirim dari preview (Whitelist)
         $includeIds = $request->input('ids', []);
 
-        // Jika tidak ada ID yang tersisa (user menghapus semua dari preview), batalkan export
         if (empty($includeIds)) {
             return redirect()
                 ->route('admin.absensi.index')
                 ->with('error', 'Tidak ada sesi yang dipilih untuk di-export. Silakan reset filter atau pilih ulang sesi.');
         }
 
-        // Query hanya sesi yang ID-nya ada dalam daftar includeIds DAN berada dalam rentang tanggal
         $sesiList = AbsensiSesi::with('details')
             ->whereBetween('tanggal', [$tanggalDari, $tanggalKe])
             ->whereIn('id', $includeIds)
             ->orderBy('tanggal')
             ->get();
 
-        // Double check jika ternyata data tidak ditemukan (misal sesi sudah dihapus orang lain saat proses)
         if ($sesiList->isEmpty()) {
             return redirect()
                 ->route('admin.absensi.index')
@@ -521,7 +514,6 @@ class AbsensiController extends Controller
         $labelKe = $tanggalKe->format('Y-m-d');
         $namaFile = "Rekap_Absensi_{$labelDari}_sd_{$labelKe}.xlsx";
 
-        // Kirim array kosong ke Exclude karena kita sudah memfilter via Query Builder (Include)
         return Excel::download(
             new AbsensiRekapExport($sesiList, $tanggalDari, $tanggalKe, []),
             $namaFile
@@ -534,17 +526,6 @@ class AbsensiController extends Controller
     public function destroy(int $id)
     {
         $sesi = AbsensiSesi::findOrFail($id);
-
-        // Catatan: Sesuai permintaan terbaru, sesi default pun bisa dihapus
-        // Jika ingin menjaga sesi default tetap aman, uncomment baris di bawah ini:
-        /*
-        if ($sesi->is_default) {
-            return redirect()
-                ->route('admin.absensi.index')
-                ->with('error', 'Sesi default (Ice Breaking) tidak bisa dihapus!');
-        }
-        */
-
         $namaSesi = $sesi->nama_sesi;
         $sesi->delete();
 
@@ -565,8 +546,6 @@ class AbsensiController extends Controller
 
         $ids = $request->input('ids');
 
-        // Hapus sesi yang dipilih
-        // Catatan: Jika ada relasi cascade di database, detail absensi akan ikut terhapus
         AbsensiSesi::whereIn('id', $ids)->delete();
 
         return response()->json([
@@ -606,5 +585,120 @@ class AbsensiController extends Controller
             ->pluck('bidang');
 
         return view('admin.absensi.pegawai', compact('pegawai', 'search', 'filterBidang', 'bidangList'));
+    }
+
+    /**
+     * Khusus dipanggil oleh Chatbot AI (Function Calling)
+     * Menghindari redirect agar AI bisa membaca hasilnya sebagai teks.
+     */
+       public function storeViaChatbot(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_sesi' => 'required|string|max:255',
+            'tanggal' => 'required|date',
+            'lokasi' => 'required|string|max:255',
+            'catatan' => 'nullable|string',
+            'pilih_bidang' => 'nullable|array',
+            'pilih_bidang.*' => 'string',
+            'pilih_jabatan' => 'nullable|array',
+            'pilih_jabatan.*' => 'string',
+            'pilih_user_ids' => 'nullable|array',
+            'pilih_user_ids.*' => 'integer|exists:users,id',
+        ]);
+
+        $sesi = AbsensiSesi::create([
+            'nama_sesi' => $validated['nama_sesi'],
+            'tanggal' => $validated['tanggal'],
+            'lokasi' => $validated['lokasi'],
+            'catatan' => $validated['catatan'] ?? null,
+            'is_default' => false,
+            'is_locked' => false,
+            'created_by' => Auth::id(),
+            'token_qr' => Str::random(48),
+            'token_generated_at' => now(),
+            'qr_lifetime_seconds' => 0,
+            'qr_auto_refresh' => false,
+        ]);
+
+        $pilihBidang = $validated['pilih_bidang'] ?? [];
+        $pilihJabatan = $validated['pilih_jabatan'] ?? [];
+        $pilihUserIds = $validated['pilih_user_ids'] ?? [];
+
+        $hasFilter = ! empty($pilihBidang) || ! empty($pilihJabatan) || ! empty($pilihUserIds);
+
+        $users = collect();
+
+        if ($hasFilter) {
+            $query = User::where('status', 'aktif')
+                ->where(function ($q) use ($pilihBidang, $pilihJabatan, $pilihUserIds) {
+                    if (! empty($pilihBidang)) {
+                        $bidangNormal = [];
+                        $includeTanpaBidang = false;
+                        foreach ($pilihBidang as $b) {
+                            if (strtoupper(trim($b)) === 'TANPA BIDANG' || strtoupper(trim($b)) === '(TANPA BIDANG)') {
+                                $includeTanpaBidang = true;
+                            } else {
+                                $bidangNormal[] = strtoupper(trim($b));
+                            }
+                        }
+                        $q->orWhere(function ($sub) use ($bidangNormal, $includeTanpaBidang) {
+                            if (! empty($bidangNormal)) {
+                                $sub->whereIn('bidang', $bidangNormal);
+                            }
+                            if ($includeTanpaBidang) {
+                                $sub->orWhere(function ($q2) {
+                                    $q2->whereNull('bidang')->orWhere('bidang', '');
+                                });
+                            }
+                        });
+                    }
+
+                    if (! empty($pilihJabatan)) {
+                        $jabatanNormal = [];
+                        $includeTanpaJabatan = false;
+                        foreach ($pilihJabatan as $j) {
+                            if (strtoupper(trim($j)) === 'TANPA JABATAN' || strtoupper(trim($j)) === '(TANPA JABATAN)') {
+                                $includeTanpaJabatan = true;
+                            } else {
+                                $jabatanNormal[] = strtoupper(trim($j));
+                            }
+                        }
+                        $q->orWhere(function ($sub) use ($jabatanNormal, $includeTanpaJabatan) {
+                            if (! empty($jabatanNormal)) {
+                                $sub->whereIn('jabatan', $jabatanNormal);
+                            }
+                            if ($includeTanpaJabatan) {
+                                $sub->orWhere(function ($q2) {
+                                    $q2->whereNull('jabatan')->orWhere('jabatan', '');
+                                });
+                            }
+                        });
+                    }
+
+                    if (! empty($pilihUserIds)) {
+                        $q->orWhereIn('id', $pilihUserIds);
+                    }
+                });
+
+            $users = $query->select('id')->get();
+        } else {
+            $users = User::where('status', 'aktif')->get();
+        }
+
+        if ($users->isNotEmpty()) {
+            $data = $users->map(fn ($u) => [
+                'absensi_sesi_id' => $sesi->id,
+                'user_id' => $u->id,
+                'status_kehadiran' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ])->toArray();
+            AbsensiDetail::insert($data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Sesi \"{$sesi->nama_sesi}\" berhasil dibuat untuk tanggal ".Carbon::parse($sesi->tanggal)->format('d-m-Y')." di {$sesi->lokasi} dengan {$users->count()} peserta.",
+        ]);
     }
 }
