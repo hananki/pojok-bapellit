@@ -45,10 +45,12 @@ class KnowledgeBase
 
     public function needsDatabaseContext(string $lower): bool
     {
+        // [FIX] Hapus 'user' dari sini biar AI nggak ngejawab pakai data KB,
+        // tapi terpaksa nembak tool kelola_user.
         $keywords = [
             'kendaraan', 'mobil', 'motor', 'plat', 'pajak', 'pemakai', 'dipakai', 'pakai',
             'merk', 'jatuh tempo', 'pajak tahunan', 'pajak 5',
-            'pegawai', 'user', 'karyawan', 'staf', 'bidang', 'jabatan', 'kepala', 'sekretaris',
+            'pegawai', 'karyawan', 'staf', 'bidang', 'jabatan', 'kepala', 'sekretaris',
             'aula', 'ruangan', 'ruang', 'lokasi', 'gedung',
         ];
 
@@ -80,7 +82,6 @@ class KnowledgeBase
                         $line .= " ({$k->merk})";
                     }
                     
-                    // [FIX] Logika baru: utamakan nama dari relasi user, jika kosong baru pakai isi manual
                     $namaUser = $k->user?->name;
                     $namaManual = $k->pemakai;
                     

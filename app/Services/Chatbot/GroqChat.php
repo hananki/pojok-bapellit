@@ -23,12 +23,11 @@ class GroqChat
     private const CACHE_TTL_LIVE = 600;      // 10 menit
     private const MAX_TOKENS_NORMAL = 500;
     private const MAX_TOKENS_LIVE = 900;
-    private const GROQ_CALLS_PER_MIN_PER_IP = 20;
+    private const GROQ_CALLS_PER_MIN_PER_IP = 60; 
     private const RATE_LIMIT_COOLDOWN = 15;
-    private const HISTORY_LIMIT = 20;
+    private const HISTORY_LIMIT = 10;
     private const MAX_REPLY_CHARS = 600;
 
-    // [FIX] Idempotency window untuk cegah booking dobel (detik)
     private const ACTION_DEDUP_TTL = 30;
 
     public function __construct(
@@ -37,17 +36,31 @@ class GroqChat
     ) {
     }
 
+    private function getApiKey(): string
+    {
+        $keys = config('services.groq.keys', []);
+        if (empty($keys)) {
+            return '';
+        }
+        $randomIndex = array_rand($keys);
+        return $keys[$randomIndex];
+    }
+
     public function ask(string $message, string $lower, string $cacheKey, string $sessionId, ?int $userId, bool $isAction = false)
     {
-        $apiKey = config('services.groq.key');
         $baseUrl = config('services.groq.url');
         $model = config('services.groq.model', 'openai/gpt-oss-20b');
+        
+        $apiKey = $this->getApiKey();
 
         if (empty($apiKey)) {
             return response()->json(['error' => 'GROQ_API_KEY belum di-set di .env'], 500);
         }
 
-        if (! $isAction) {
+        // Deteksi obrolan santai biar nggak kena cache
+        $isCasual = preg_match('/\b(halo|hai|pagi|siang|malam|kabar|sayang|jago|ga|gak|kok|kenapa|lucu|anjir|wkwk|rekomendasi)\b/iu', $lower) === 1;
+
+        if (! $isAction && ! $isCasual) {
             $cachedReply = Cache::get($cacheKey);
             if ($cachedReply) {
                 ChatHistory::log($sessionId, 'assistant', $cachedReply, $userId);
@@ -55,7 +68,7 @@ class GroqChat
             }
         }
 
-        // [FIX] Circuit breaker
+        // Circuit breaker (Kunci per-IP)
         $cooldownUntil = (int) Cache::get('chatbot:groq:cooldown_until', 0);
         if ($cooldownUntil > time()) {
             $wait = $cooldownUntil - time();
@@ -72,7 +85,10 @@ class GroqChat
         RateLimiter::hit($rlKey, 60);
 
         $isGptOss = str_contains($model, 'gpt-oss');
-        $live = $isGptOss && ! $isAction && $this->needsWebSearch($lower);
+        
+        // Selalu pakai web search kalau bukan aksi sistem dan bukan pertanyaan data internal
+        $isInternalQuery = preg_match('/\b(booking|boking|aula|surat|absensi|presensi|user|pegawai|kendaraan|mobil|motor|plat|pajak|bidang|jabatan)\b/iu', $lower) === 1;
+        $live = $isGptOss && ! $isAction && ! $isInternalQuery;
 
         try {
             $history = ChatHistory::recentForSession($sessionId, self::HISTORY_LIMIT);
@@ -119,7 +135,7 @@ class GroqChat
                 ->post(rtrim($baseUrl, '/').'/chat/completions', $payload);
 
             try {
-                GroqRateLimit::capture($response);
+                GroqRateLimit::capture($response, $apiKey); // [FIX] Tambah $apiKey
             } catch (\Throwable $e) {
                 Log::warning('GroqRateLimit capture gagal', ['message' => $e->getMessage()]);
             }
@@ -131,13 +147,15 @@ class GroqChat
                 if ($isGptOss) {
                     $payload['reasoning_effort'] = 'medium';
                 }
+                
+                $apiKey = $this->getApiKey();
                 $response = Http::timeout(30)
                     ->withToken($apiKey)
                     ->acceptJson()
                     ->post(rtrim($baseUrl, '/').'/chat/completions', $payload);
 
                 try {
-                    GroqRateLimit::capture($response);
+                    GroqRateLimit::capture($response, $apiKey); // [FIX] Tambah $apiKey
                 } catch (\Throwable $e) {
                     Log::warning('GroqRateLimit capture gagal (retry)', ['message' => $e->getMessage()]);
                 }
@@ -147,15 +165,25 @@ class GroqChat
                 Log::error('Groq API Error', ['status' => $response->status(), 'body' => $response->body()]);
 
                 if ($response->status() === 429) {
-                    $wait = (int) ceil((float) $response->header('retry-after'));
-                    if ($wait <= 0) {
-                        $wait = self::RATE_LIMIT_COOLDOWN;
-                    }
-                    Cache::put('chatbot:groq:cooldown_until', time() + $wait, $wait + 5);
+                    Log::info('Rate limit hit, rotasi API Key dan coba lagi.');
+                    $apiKey = $this->getApiKey();
+                    
+                    $response = Http::timeout(15)
+                        ->withToken($apiKey)
+                        ->acceptJson()
+                        ->post(rtrim($baseUrl, '/').'/chat/completions', $payload);
 
-                    $reply = "AI sedang kena batas pemakaian. Coba lagi dalam {$wait} detik ya 🙏";
-                    ChatHistory::log($sessionId, 'assistant', $reply, $userId);
-                    return response()->json(['reply' => $reply, 'source' => 'rate_limited']);
+                    if ($response->status() === 429) {
+                        $wait = (int) ceil((float) $response->header('retry-after'));
+                        if ($wait <= 0) {
+                            $wait = self::RATE_LIMIT_COOLDOWN;
+                        }
+                        Cache::put('chatbot:groq:cooldown_until', time() + $wait, $wait + 5);
+
+                        $reply = "AI sedang kena batas pemakaian. Coba lagi dalam {$wait} detik ya 🙏";
+                        ChatHistory::log($sessionId, 'assistant', $reply, $userId);
+                        return response()->json(['reply' => $reply, 'source' => 'rate_limited']);
+                    }
                 }
 
                 if ($response->status() === 400) {
@@ -164,10 +192,12 @@ class GroqChat
                     return response()->json(['reply' => $reply, 'source' => 'groq_error']);
                 }
 
-                return response()->json([
-                    'error' => 'Gagal menghubungi AI (HTTP '.$response->status().')',
-                    'detail' => app()->isLocal() ? $response->json() : null,
-                ], 500);
+                if ($response->failed()) {
+                    return response()->json([
+                        'error' => 'Gagal menghubungi AI (HTTP '.$response->status().')',
+                        'detail' => app()->isLocal() ? $response->json() : null,
+                    ], 500);
+                }
             }
 
             $responseData = $response->json() ?? [];
@@ -195,7 +225,7 @@ class GroqChat
 
             ChatHistory::log($sessionId, 'assistant', $reply, $userId);
 
-            if (! $isAction) {
+            if (! $isAction && ! $isCasual) {
                 Cache::put($cacheKey, $reply, $live ? self::CACHE_TTL_LIVE : self::CACHE_TTL_NORMAL);
             }
 
@@ -215,10 +245,9 @@ class GroqChat
     {
         $toolCalls = $message['tool_calls'];
 
-                $context = [];
+        $context = [];
         foreach ($history as $m) {
             if (in_array($m['role'] ?? '', ['user', 'assistant'], true) && ! empty($m['content']) && empty($m['tool_calls'])) {
-                // Potong per pesan maksimal 600 karakter (sebelumnya 400) biar data booking ga kepotong
                 $context[] = ['role' => $m['role'], 'content' => mb_substr((string) $m['content'], 0, 600)];
             }
         }
@@ -253,7 +282,6 @@ class GroqChat
             $arguments = json_decode($toolCall['function']['arguments'] ?? '', true);
             $arguments = is_array($arguments) ? $arguments : [];
 
-            // [FIX] IDEMPOTENCY: cegah tool create dipanggil dobel dalam 30 detik
             if (str_starts_with($functionName, 'create_')) {
                 $dedupKey = 'chatbot:tool:dedup:'.$sessionId.':'.$functionName.':'.md5(json_encode($arguments));
                 if (Cache::has($dedupKey)) {
@@ -270,11 +298,9 @@ class GroqChat
                     ];
                     continue;
                 }
-                // Tandai sudah diproses selama 30 detik
                 Cache::put($dedupKey, true, self::ACTION_DEDUP_TTL);
             }
 
-            // Eksekusi tool
             try {
                 [$result, $summary] = $this->tools->run($functionName, $arguments, $user);
             } catch (\Throwable $e) {
@@ -286,7 +312,6 @@ class GroqChat
                 $summary = '⚠️ Gagal: '.$e->getMessage();
             }
 
-            // [FIX] Deteksi apakah tool GAGAL dari struktur JSON hasil
             $resultArr = is_string($result) ? json_decode($result, true) : $result;
             $toolFailed = is_array($resultArr) && (
                 ($resultArr['success'] ?? true) === false
@@ -300,7 +325,6 @@ class GroqChat
                     'tool' => $functionName,
                     'result' => $resultArr,
                 ]);
-                // Kalau gagal, hapus dedup key supaya user bisa retry
                 if (str_starts_with($functionName, 'create_')) {
                     $dedupKey = 'chatbot:tool:dedup:'.$sessionId.':'.$functionName.':'.md5(json_encode($arguments));
                     Cache::forget($dedupKey);
@@ -316,8 +340,6 @@ class GroqChat
             ];
         }
 
-        // [FIX] Kalau tool gagal, JANGAN panggil AI follow-up (AI bisa halusinasi sukses).
-        // Langsung tampilkan pesan error yang jujur ke user.
         if ($hasError) {
             $reply = '❌ Maaf, aksi gagal diproses: '.$errorMessage."\nSilakan coba lagi ya.";
             $reply = $this->cleanReply($reply);
@@ -330,6 +352,8 @@ class GroqChat
 
     private function askFollowUp(array $messages, string $sessionId, ?int $userId, string $apiKey, string $baseUrl, string $model, array $fallbackLines = [])
     {
+        $apiKey = $this->getApiKey();
+
         $payload = [
             'model' => $model,
             'messages' => $messages,
@@ -355,20 +379,28 @@ class GroqChat
                 ->post(rtrim($baseUrl, '/').'/chat/completions', $payload);
 
             try {
-                GroqRateLimit::capture($response);
+                GroqRateLimit::capture($response, $apiKey); // [FIX] Tambah $apiKey
             } catch (\Throwable $e) {
                 Log::warning('GroqRateLimit capture gagal (follow up)', ['message' => $e->getMessage()]);
             }
 
             if ($response->status() === 429) {
-                $wait = (int) ceil((float) $response->header('retry-after'));
-                if ($wait <= 0) {
-                    $wait = self::RATE_LIMIT_COOLDOWN;
-                }
-                Cache::put('chatbot:groq:cooldown_until', time() + $wait, $wait + 5);
+                $apiKey = $this->getApiKey();
+                $response = Http::timeout(20)
+                    ->withToken($apiKey)
+                    ->acceptJson()
+                    ->post(rtrim($baseUrl, '/').'/chat/completions', $payload);
 
-                ChatHistory::log($sessionId, 'assistant', $fallbackReply, $userId);
-                return response()->json(['reply' => $fallbackReply, 'source' => 'tool_fallback']);
+                if ($response->status() === 429) {
+                    $wait = (int) ceil((float) $response->header('retry-after'));
+                    if ($wait <= 0) {
+                        $wait = self::RATE_LIMIT_COOLDOWN;
+                    }
+                    Cache::put('chatbot:groq:cooldown_until', time() + $wait, $wait + 5);
+
+                    ChatHistory::log($sessionId, 'assistant', $fallbackReply, $userId);
+                    return response()->json(['reply' => $fallbackReply, 'source' => 'tool_fallback']);
+                }
             }
 
             $data = $response->json() ?? [];
@@ -395,14 +427,6 @@ class GroqChat
             ChatHistory::log($sessionId, 'assistant', $fallbackReply, $userId);
             return response()->json(['reply' => $fallbackReply, 'source' => 'tool_fallback']);
         }
-    }
-
-    private function needsWebSearch(string $lower): bool
-    {
-        return (bool) preg_match(
-            '/\b(jadwal|skor|klasemen|hasil pertandingan|hari ini|besok|kemarin|terbaru|terkini|berita|cuaca|harga|kurs|saham|update|live|covid|vaksin|penyakit|resep|restoran|hotel)\b/iu',
-            $lower
-        );
     }
 
     private function cleanReply(string $text): string

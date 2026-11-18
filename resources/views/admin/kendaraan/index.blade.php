@@ -12,7 +12,6 @@
 <style>
     /* ===== HERO & BACKGROUND ===== */
     .gradient-bg {
-        /* Warna gradasi persis seperti navbar: Hijau -> Teal -> Biru */
         background: linear-gradient(135deg, #22c55e 0%, #0d9488 50%, #2563eb 100%);
         position: relative;
         overflow: hidden;
@@ -37,14 +36,8 @@
     
     /* ===== ANIMASI MASUK (STAGGERED) ===== */
     @keyframes enterCard {
-        from {
-            opacity: 0;
-            transform: translateY(40px) scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
+        from { opacity: 0; transform: translateY(40px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .animate-enter-card {
@@ -54,16 +47,12 @@
 
     /* ===== ANIMASI KELUAR (HAPUS) ===== */
     @keyframes exitCard {
-        to {
-            opacity: 0;
-            transform: scale(0.85) translateY(-10px);
-            filter: blur(4px);
-        }
+        to { opacity: 0; transform: scale(0.85) translateY(-10px); filter: blur(4px); }
     }
 
     .animate-exit-card {
         animation: exitCard 0.4s cubic-bezier(0.4, 0, 1, 1) forwards !important;
-        pointer-events: none; /* Cegah klik ganda saat animasi keluar */
+        pointer-events: none;
     }
 
     /* ===== GLASS CARD EFFECT ===== */
@@ -104,9 +93,7 @@
         background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.05), transparent);
     }
     
-    .vehicle-card:hover::before {
-        left: 100%;
-    }
+    .vehicle-card:hover::before { left: 100%; }
     
     .vehicle-card:hover {
         transform: translateY(-8px);
@@ -147,27 +134,22 @@
     
     /* ===== STAT CARDS ===== */
     .stat-card {
-        background: linear-gradient(135deg, #16a34a 0%, #0d9488 100%);       
         color: white;
-        border-radius: 1.5rem;
-        padding: 1.5rem;
+        border-radius: 1.25rem;
+        padding: 1.25rem;
         position: relative;
         overflow: hidden;
         transition: transform 0.2s;
         border: 1px solid rgba(255,255,255,0.15);
     }
     
-    .stat-card:hover {
-        transform: translateY(-3px);
-    }
+    .stat-card:hover { transform: translateY(-3px); }
     
     .stat-card::before {
         content: '';
         position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
+        top: -50%; right: -50%;
+        width: 200%; height: 200%;
         background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
     }
     
@@ -200,38 +182,47 @@
     }
 
     /* ===== LOADING SPINNER ===== */
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    .animate-spin {
-        animation: spin 1s linear infinite;
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
+
+    /* ===== RESPONSIVE FIXES ===== */
+    @media (max-width: 768px) {
+        .stat-card {
+            padding: 1rem;
+        }
+        .stat-card p.text-3xl {
+            font-size: 1.5rem;
+        }
+        .hero-title {
+            font-size: 2rem;
+        }
     }
 </style>
 
 <div class="min-h-screen pb-12 bg-slate-50 dark:bg-slate-900">
     <!-- Hero Section -->
-    <div class="gradient-bg text-white py-12 mb-8 rounded-b-3xl shadow-xl">
-        <div class="max-w-7xl mx-auto px-4 relative z-10">
+    <div class="gradient-bg text-white py-8 sm:py-12 mb-8 rounded-b-3xl shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
             <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="text-center md:text-left relative z-10">
-                    <div class="flex items-center gap-3 justify-center md:justify-start mb-3">
-                        <div class="bg-white/20 backdrop-blur-sm p-3 rounded-2xl shadow-inner border border-white/20">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="text-center md:text-left relative z-10 w-full md:w-auto">
+                    <div class="flex flex-col md:flex-row items-center gap-3 justify-center md:justify-start mb-3">
+                        <div class="bg-white/20 backdrop-blur-sm p-3 rounded-2xl shadow-inner border border-white/20 mb-2 md:mb-0">
+                            <svg class="w-8 h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-bold text-white/80 tracking-wider uppercase">Monitoring Aset</p>
-                            <h1 class="text-3xl md:text-4xl font-bold">Kendaraan Dinas</h1>
+                            <p class="text-xs md:text-sm font-bold text-white/80 tracking-wider uppercase">Monitoring Aset</p>
+                            <h1 class="text-2xl md:text-4xl font-bold hero-title">Kendaraan Dinas</h1>
                         </div>
                     </div>
-                    <p class="text-lg text-white/90 max-w-xl">Kelola dan pantau pajak kendaraan dengan mudah dan terintegrasi.</p>
+                    <p class="text-sm md:text-lg text-white/90 max-w-xl">Kelola dan pantau pajak kendaraan dengan mudah dan terintegrasi.</p>
                 </div>
                 
                 @if($isAdmin)
-                <a href="{{ route('admin.kendaraan.create') }}" class="btn-hero-add inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold shadow-lg relative z-10">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('admin.kendaraan.create') }}" class="btn-hero-add inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 rounded-full font-bold shadow-lg relative z-10 w-full md:w-auto mt-4 md:mt-0">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                     </svg>
                     <span>Tambah Kendaraan</span>
@@ -241,89 +232,89 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4">
+    <div class="max-w-7xl mx-auto px-2 sm:px-6">
         
         <!-- Stats Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-8">
             <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
                 <div class="relative z-10">
-                    <p class="text-xs font-bold uppercase tracking-widest text-blue-100 mb-1">Total Kendaraan</p>
-                    <p class="text-3xl font-extrabold">{{ $kendaraan->count() }}</p>
-                    <p class="text-xs text-blue-100 mt-1">Unit terdaftar</p>
+                    <p class="text-[9px] sm:text-xs font-bold uppercase tracking-widest text-blue-100 mb-1">Total Kendaraan</p>
+                    <p class="text-xl sm:text-3xl font-extrabold">{{ $kendaraan->count() }}</p>
+                    <p class="text-[9px] sm:text-xs text-blue-100 mt-1">Unit terdaftar</p>
                 </div>
             </div>
             <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
                 <div class="relative z-10">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Pajak Mendesak</p>
-                    <p class="text-3xl font-extrabold">
+                    <p class="text-[9px] sm:text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Pajak Mendesak</p>
+                    <p class="text-xl sm:text-3xl font-extrabold">
                         {{ $kendaraan->filter(fn($k) => ($k->pajakTahunanAktif?->sisa_hari ?? 999) <= 7 || ($k->pajakLimaTahunanAktif?->sisa_hari ?? 999) <= 7)->count() }}
                     </p>
-                    <p class="text-xs opacity-70 mt-1">≤ 7 hari lagi</p>
+                    <p class="text-[9px] sm:text-xs opacity-70 mt-1">≤ 7 hari lagi</p>
                 </div>
             </div>
             <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                 <div class="relative z-10">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Status Aktif</p>
-                    <p class="text-3xl font-extrabold">{{ $kendaraan->where('status', 'aktif')->count() }}</p>
-                    <p class="text-xs opacity-70 mt-1">Siap digunakan</p>
+                    <p class="text-[9px] sm:text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Status Aktif</p>
+                    <p class="text-xl sm:text-3xl font-extrabold">{{ $kendaraan->where('status', 'aktif')->count() }}</p>
+                    <p class="text-[9px] sm:text-xs opacity-70 mt-1">Siap digunakan</p>
                 </div>
             </div>
             <div class="stat-card" style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);">
                 <div class="relative z-10">
-                    <p class="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Unit Kerja</p>
-                    <p class="text-3xl font-extrabold">{{ $kendaraan->pluck('unit_kerja')->filter()->unique()->count() }}</p>
-                    <p class="text-xs opacity-70 mt-1">Departemen berbeda</p>
+                    <p class="text-[9px] sm:text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Unit Kerja</p>
+                    <p class="text-xl sm:text-3xl font-extrabold">{{ $kendaraan->pluck('unit_kerja')->filter()->unique()->count() }}</p>
+                    <p class="text-[9px] sm:text-xs opacity-70 mt-1">Departemen berbeda</p>
                 </div>
             </div>
         </div>
 
         <!-- Legend -->
-        <div class="glass-card rounded-3xl p-6 mb-6">
+        <div class="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="bg-green-50 dark:bg-green-900/30 p-2 rounded-xl">
                     <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <p class="text-base font-bold text-slate-800 dark:text-white">Keterangan Status Pajak</p>
+                <p class="text-sm sm:text-base font-bold text-slate-800 dark:text-white">Keterangan Status Pajak</p>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 rounded-xl px-3 py-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+                <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 rounded-lg sm:rounded-xl px-2.5 py-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-600 dark:bg-red-500"></span>
-                    <span class="text-xs font-semibold text-red-700 dark:text-red-300">≤ 7 hari</span>
+                    <span class="text-[9px] sm:text-xs font-semibold text-red-700 dark:text-red-300">≤ 7 hari</span>
                 </div>
-                <div class="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 rounded-xl px-3 py-2">
+                <div class="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 rounded-lg sm:rounded-xl px-2.5 py-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-600 dark:bg-amber-500"></span>
-                    <span class="text-xs font-semibold text-amber-700 dark:text-amber-300">8-30 hari</span>
+                    <span class="text-[9px] sm:text-xs font-semibold text-amber-700 dark:text-amber-300">8-30 hari</span>
                 </div>
-                <div class="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 rounded-xl px-3 py-2">
+                <div class="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 rounded-lg sm:rounded-xl px-2.5 py-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-500"></span>
-                    <span class="text-xs font-semibold text-blue-700 dark:text-blue-300">31-60 hari</span>
+                    <span class="text-[9px] sm:text-xs font-semibold text-blue-700 dark:text-blue-300">31-60 hari</span>
                 </div>
-                <div class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 rounded-xl px-3 py-2">
+                <div class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 rounded-lg sm:rounded-xl px-2.5 py-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-500"></span>
-                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Sudah Bayar</span>
+                    <span class="text-[9px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-300">Sudah Bayar</span>
                 </div>
-                <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
+                <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl px-2.5 py-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-slate-600 dark:bg-slate-400"></span>
-                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">> 60 hari</span>
+                    <span class="text-[9px] sm:text-xs font-semibold text-slate-700 dark:text-slate-300">> 60 hari</span>
                 </div>
             </div>
         </div>
 
         <!-- Search & Filter -->
-        <form method="GET" class="glass-card rounded-3xl p-6 mb-8" onsubmit="showLoading(this)">
-            <div class="grid md:grid-cols-4 gap-4">
+        <form method="GET" class="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-8" onsubmit="showLoading(this)">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
                 <div class="md:col-span-2">
-                    <div class="search-box flex items-center">
+                    <div class="search-box flex items-center h-full">
                         <svg class="w-5 h-5 text-slate-400 ml-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
-                        <input name="search" value="{{ request('search') }}" placeholder="Cari plat nomor, pemakai..." class="w-full px-4 py-3 rounded-full border-0 focus:outline-none focus:ring-0 bg-transparent text-slate-900 dark:text-white placeholder-slate-400">
+                        <input name="search" value="{{ request('search') }}" placeholder="Cari plat nomor, pemakai..." class="w-full px-4 py-3 rounded-full border-0 focus:outline-none focus:ring-0 bg-transparent text-sm sm:text-base text-slate-900 dark:text-white placeholder-slate-400">
                     </div>
                 </div>
-                <input name="unit_kerja" value="{{ request('unit_kerja') }}" placeholder="Unit kerja" class="px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 focus:border-green-500 focus:ring-green-500 transition bg-white/50 dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder-slate-400 backdrop-blur-sm">
-                <select name="status" class="px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 focus:border-green-500 focus:ring-green-500 transition bg-white/50 dark:bg-slate-800/80 text-slate-900 dark:text-white backdrop-blur-sm">
+                <input name="unit_kerja" value="{{ request('unit_kerja') }}" placeholder="Unit kerja" class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-green-500 focus:ring-green-500 transition bg-white/50 dark:bg-slate-800/80 text-sm sm:text-base text-slate-900 dark:text-white placeholder-slate-400 backdrop-blur-sm">
+                <select name="status" class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-green-500 focus:ring-green-500 transition bg-white/50 dark:bg-slate-800/80 text-sm sm:text-base text-slate-900 dark:text-white backdrop-blur-sm">
                     <option value="" class="dark:bg-slate-800">Semua status</option>
                     @foreach(['aktif','tidak dipakai','rusak'] as $status)
                         <option value="{{ $status }}" @selected(request('status') === $status) class="dark:bg-slate-800">{{ ucfirst($status) }}</option>
@@ -331,7 +322,7 @@
                 </select>
             </div>
             <div class="flex flex-col sm:flex-row gap-3 mt-4">
-                <button type="submit" id="btn-filter" class="btn-gradient text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
+                <button type="submit" id="btn-filter" class="btn-gradient text-white px-6 py-2.5 sm:py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all w-full sm:w-auto text-sm sm:text-base">
                     <svg id="icon-filter" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                     </svg>
@@ -341,7 +332,7 @@
                     </svg>
                     <span id="text-filter">Terapkan Filter</span>
                 </button>
-                <a href="{{ route('kendaraan.index') }}" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-6 py-3 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2 shadow-sm">
+                <a href="{{ route('kendaraan.index') }}" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-6 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto text-sm sm:text-base">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
@@ -351,43 +342,42 @@
         </form>
 
         <!-- Vehicle Cards -->
-        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6" style="align-items: start;">
+        <div class="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6" style="align-items: start;">
             @forelse($kendaraan as $item)
-            <div class="vehicle-card glass-card rounded-3xl overflow-hidden flex flex-col h-full border border-slate-200 dark:border-slate-800 animate-enter-card" 
+            <div class="vehicle-card glass-card rounded-xl sm:rounded-3xl overflow-hidden flex flex-col h-full border border-slate-200 dark:border-slate-800 animate-enter-card" 
                  style="animation-delay: {{ $loop->index * 100 }}ms;" 
                  id="vehicle-card-{{ $item->id }}">
                 
                 <!-- Image Header -->
-                <div class="relative h-52 bg-slate-800 dark:bg-black overflow-hidden flex-shrink-0 group/img-container">
+                <div class="relative h-32 sm:h-52 bg-slate-800 dark:bg-black overflow-hidden flex-shrink-0 group/img-container">
                     @if($item->foto_url)
                         <img src="{{ $item->foto_url }}"
                              class="w-full h-full object-cover transition-transform duration-700 group-hover/img-container:scale-110"
                              alt="{{ $item->plat_nomor }}">
                         
-                        <!-- Overlay & Zoom Button -->
-                        <div class="absolute inset-0 bg-black/0 hover:bg-black/30 transition-all flex items-end justify-end p-4">
+                        <div class="absolute inset-0 bg-black/0 hover:bg-black/30 transition-all flex items-end justify-end p-2 sm:p-4">
                             <button type="button"
                                     onclick="openPreview('{{ $item->foto_url }}', '{{ $item->plat_nomor }}')"
-                                    class="opacity-0 hover:opacity-100 bg-white/90 text-slate-800 text-xs font-bold px-4 py-2 rounded-full flex items-center gap-2 transition-all transform translate-y-4 hover:translate-y-0 shadow-lg">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="opacity-0 group-hover/img-container:opacity-100 bg-white/90 text-slate-800 text-[10px] sm:text-xs font-bold px-2 sm:px-4 py-1 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2 transition-all transform translate-y-2 sm:translate-y-4 group-hover/img-container:translate-y-0 shadow-lg">
+                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
                                 </svg>
-                                Preview Foto
+                                Preview
                             </button>
                         </div>
                     @else
                         <div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black">
-                            <svg class="w-16 h-16 text-green-500/50 dark:text-green-900/50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-8 h-8 sm:w-16 sm:h-16 text-green-500/50 dark:text-green-900/50 mb-1 sm:mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
                             </svg>
-                            <span class="text-slate-400 dark:text-slate-500 text-sm font-medium">Tidak ada foto</span>
+                            <span class="text-slate-400 dark:text-slate-500 text-[9px] sm:text-sm font-medium">Tanpa foto</span>
                         </div>
                     @endif
 
                     <!-- Status badge -->
-                    <div class="absolute top-4 right-4 pointer-events-none">
-                        <span class="px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-md
+                    <div class="absolute top-2 right-2 sm:top-4 sm:right-4 pointer-events-none">
+                        <span class="px-1.5 py-0.5 sm:px-3 sm:py-1.5 rounded-full text-[8px] sm:text-xs font-bold shadow-lg backdrop-blur-md
                             {{ $item->status === 'aktif' ? 'bg-green-500/90 text-white' : 'bg-slate-600/90 text-white' }}">
                             {{ ucfirst($item->status) }}
                         </span>
@@ -395,42 +385,42 @@
                 </div>
 
                 <!-- Body -->
-                <div class="p-5 flex flex-col flex-1">
+                <div class="p-2.5 sm:p-5 flex flex-col flex-1">
                     <!-- Label + Judul -->
-                    <a href="{{ route($isAdmin ? 'admin.kendaraan.show' : 'kendaraan.show', $item) }}" class="block mb-4 group/link">
-                        <span class="inline-block px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg text-[10px] font-bold tracking-wider uppercase mb-2 border border-green-100 dark:border-green-800">
-                            Kendaraan Dinas
+                    <a href="{{ route($isAdmin ? 'admin.kendaraan.show' : 'kendaraan.show', $item) }}" class="block mb-2 sm:mb-4 group/link">
+                        <span class="inline-block px-1.5 py-0.5 sm:px-3 sm:py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded md:rounded-lg text-[8px] sm:text-[10px] font-bold tracking-wider uppercase mb-1 sm:mb-2 border border-green-100 dark:border-green-800">
+                            Kendaraan
                         </span>
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover/link:text-green-600 dark:group-hover/link:text-green-400 transition-colors">{{ $item->plat_nomor }}</h2>
-                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">{{ $item->merk ?: '—' }}</p>
+                        <h2 class="text-sm sm:text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover/link:text-green-600 dark:group-hover/link:text-green-400 transition-colors">{{ $item->plat_nomor }}</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-[10px] sm:text-sm mt-0.5 sm:mt-1 truncate">{{ $item->merk ?: '—' }}</p>
                     </a>
 
                     <!-- Unit Kerja -->
-                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl px-4 py-3 mb-4 border border-slate-100 dark:border-slate-700/50">
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider mb-0.5">Unit Kerja</p>
-                        <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm">{{ $item->unit_kerja ?: 'Belum ditentukan' }}</p>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg sm:rounded-xl px-2 py-1.5 sm:px-4 sm:py-3 mb-2 sm:mb-4 border border-slate-100 dark:border-slate-700/50">
+                        <p class="text-[8px] sm:text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider mb-0.5 hidden sm:block">Unit Kerja</p>
+                        <p class="font-semibold text-slate-800 dark:text-slate-200 text-[10px] sm:text-sm truncate">{{ $item->unit_kerja ?: '—' }}</p>
                     </div>
 
                     <!-- Pajak badges -->
-                    <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-3 mb-3 sm:mb-5">
                         @foreach([['Pajak Tahunan', $item->pajakTahunanAktif], ['Pajak 5 Tahunan', $item->pajakLimaTahunanAktif]] as [$label, $pajak])
-                        <div class="rounded-xl p-3 border border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-1.5 font-semibold uppercase">{{ $label }}</p>
+                        <div class="rounded-lg sm:rounded-xl p-1.5 sm:p-3 border border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
+                            <p class="text-[8px] sm:text-[10px] text-slate-500 dark:text-slate-400 mb-0.5 sm:mb-1.5 font-semibold uppercase truncate">{{ $label }}</p>
                             @if($pajak)
                                 @include('kendaraan.partials.badge-pajak', ['pajak' => $pajak])
                             @else
-                                <span class="text-xs text-slate-400 dark:text-slate-500 italic">Belum ada data</span>
+                                <span class="text-[9px] sm:text-xs text-slate-400 dark:text-slate-500 italic">Belum ada data</span>
                             @endif
                         </div>
                         @endforeach
                     </div>
 
-                    <!-- Action buttons — selalu di bawah -->
-                    <div class="mt-auto flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <!-- Action buttons -->
+                    <div class="mt-auto flex gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-slate-100 dark:border-slate-800">
                         <a href="{{ route($isAdmin ? 'admin.kendaraan.show' : 'kendaraan.show', $item) }}"
-                           class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 shadow-md shadow-green-200/50 dark:shadow-none"
+                           class="flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 shadow-md shadow-green-200/50 dark:shadow-none"
                            style="background: linear-gradient(135deg,#22c55e,#16a34a);">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
@@ -438,18 +428,18 @@
                         </a>
                         @if($isAdmin)
                         <a href="{{ route('admin.kendaraan.edit', $item) }}"
-                           class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 shadow-md shadow-blue-200/50 dark:shadow-none"
+                           class="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 shadow-md shadow-blue-200/50 dark:shadow-none"
                            style="background: linear-gradient(135deg,#3b82f6,#2563eb);">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                             </svg>
                         </a>
                         <button
                             type="button"
                             onclick="confirmDelete({{ $item->id }}, '{{ $item->plat_nomor }}')"
-                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 shadow-md shadow-red-200/50 dark:shadow-none"
+                            class="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 shadow-md shadow-red-200/50 dark:shadow-none"
                             style="background: linear-gradient(135deg,#ef4444,#dc2626);">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
                         </button>
@@ -461,16 +451,16 @@
                 </div>
             </div>
             @empty
-            <div class="md:col-span-2 xl:col-span-3 glass-card rounded-3xl p-16 text-center animate-enter-card">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-50 dark:bg-slate-800 mb-6">
-                    <svg class="w-10 h-10 text-green-400 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="col-span-2 lg:col-span-2 xl:col-span-3 glass-card rounded-2xl sm:rounded-3xl p-10 sm:p-16 text-center animate-enter-card">
+                <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-50 dark:bg-slate-800 mb-4 sm:mb-6">
+                    <svg class="w-8 h-8 sm:w-10 sm:h-10 text-green-400 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <p class="text-xl font-bold text-slate-800 dark:text-white mb-2">Belum ada data kendaraan</p>
-                <p class="text-slate-500 dark:text-slate-400 mb-6">Silakan tambahkan kendaraan baru untuk memulai pendataan.</p>
+                <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white mb-2">Belum ada data kendaraan</p>
+                <p class="text-sm sm:text-base text-slate-500 dark:text-slate-400 mb-6">Silakan tambahkan kendaraan baru untuk memulai pendataan.</p>
                 @if($isAdmin)
-                <a href="{{ route('admin.kendaraan.create') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition">
+                <a href="{{ route('admin.kendaraan.create') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl text-sm sm:text-base font-bold hover:bg-green-700 transition w-full sm:w-auto">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Tambah Sekarang
                 </a>
@@ -493,7 +483,7 @@
             <div class="bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                 <img id="preview-img" src="" alt="" class="w-full max-h-[80vh] object-contain">
             </div>
-            <p id="preview-caption" class="mt-4 text-center text-white font-bold text-lg drop-shadow-md"></p>
+            <p id="preview-caption" class="mt-4 text-center text-white font-bold text-sm sm:text-lg drop-shadow-md"></p>
         </div>
     </div>
 

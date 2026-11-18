@@ -193,12 +193,6 @@ Route::middleware(['auth', 'cek.status', 'role:admin'])
         Route::put('/kendaraan/{id}', [KendaraanController::class, 'update'])->name('kendaraan.update');
         Route::delete('/kendaraan/{id}', [KendaraanController::class, 'destroy'])->name('kendaraan.destroy');
 
-        // ===== KELOLA AULA (MASTER DATA) =====
-        Route::post('/aula/{id}/toggle-status', [AulaController::class, 'toggleStatus'])->name('aula.toggle-status');
-        Route::post('/aula/{id}/delete-photos', [AulaController::class, 'deletePhotos'])->name('aula.delete-photos');
-        Route::delete('/aula/{id}/delete-photo', [AulaController::class, 'deletePhoto'])->name('aula.delete-photo');
-        Route::resource('aula', AulaController::class);
-
         // ===== KELOLA AKUN =====
         Route::get('/kelolaakun', [UserController::class, 'index'])->name('kelolaakun.index');
         Route::get('/kelolaakun/create', [UserController::class, 'create'])->name('kelolaakun.create');
@@ -207,7 +201,6 @@ Route::middleware(['auth', 'cek.status', 'role:admin'])
         Route::put('/kelolaakun/{id}', [UserController::class, 'update'])->name('kelolaakun.update');
         Route::delete('/kelolaakun/{id}', [UserController::class, 'destroy'])->name('kelolaakun.destroy');
     });
-
 
 // 2. RUTE PENGELOLA SURAT (Admin & Pengelola Surat)
 Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_surat'])
@@ -226,12 +219,17 @@ Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_surat'])
         Route::delete('/kelolasurat/{id}', [AdminSuratController::class, 'destroy'])->name('kelolasurat.destroy');
     });
 
-
 // 3. RUTE PENGELOLA AULA / BOOKING (Admin & Pengelola Aula)
 Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_aula'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        // ===== KELOLA AULA (MASTER DATA) =====
+        Route::post('/aula/{id}/toggle-status', [AulaController::class, 'toggleStatus'])->name('aula.toggle-status');
+        Route::post('/aula/{id}/delete-photos', [AulaController::class, 'deletePhotos'])->name('aula.delete-photos');
+        Route::delete('/aula/{id}/delete-photo', [AulaController::class, 'deletePhoto'])->name('aula.delete-photo');
+        Route::resource('aula', AulaController::class);
+
         // ===== KELOLA BOOKING =====
         Route::get('/kelolabooking', [AdminBookingController::class, 'index'])->name('kelolabooking.index');
         Route::get('/kelolabooking/export', [AdminBookingController::class, 'export'])->name('kelolabooking.export');
@@ -243,7 +241,6 @@ Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_aula'])
         Route::put('/kelolabooking/{id}', [AdminBookingController::class, 'update'])->name('kelolabooking.update');
         Route::delete('/kelolabooking/{id}', [AdminBookingController::class, 'destroy'])->name('kelolabooking.destroy');
     });
-
 
 // 4. RUTE PENGELOLA ABSENSI (Admin & Pengelola Absensi)
 Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_absensi'])
@@ -257,7 +254,7 @@ Route::middleware(['auth', 'cek.status', 'role:admin,pengelola_absensi'])
         Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
         Route::get('/absensi/create', [AbsensiController::class, 'create'])->name('absensi.create');
         Route::post('/absensi', [AbsensiController::class, 'store'])->name('absensi.store');
-        Route::post('/absensi/bulk-destroy', [AbsensiController::class, 'bulkDestroy'])->name('absensi.bulk-destroy');
+        Route::post('/absensi/bulk-destroy', [AdminBookingController::class, 'bulkDestroy'])->name('absensi.bulk-destroy');
         Route::get('/absensi/export-rekap', [AbsensiController::class, 'exportRekap'])->name('absensi.export-rekap');
         Route::get('/absensi/{id}/qr', [AbsensiController::class, 'qrCode'])->name('absensi.qr');
         Route::post('/absensi/{id}/qr/regenerate', [AbsensiController::class, 'regenerateQr'])->name('absensi.qr-regenerate');

@@ -1,5 +1,7 @@
-﻿@php
-    $isAdmin = Auth::user()?->isAdmin() ?? false;
+@php
+    $user = Auth::user();
+    $canManageAula = $user && ($user->isAdmin() || $user->role === 'pengelola_aula');
+    $isAdmin = $user?->isAdmin() ?? false;
     $layout = $isAdmin ? 'layouts.admin' : 'layouts.user';
     $photos = is_array($aula->foto) ? $aula->foto : [];
     $facilities = is_array($aula->fasilitas) ? $aula->fasilitas : [];
@@ -16,7 +18,7 @@
         </div>
         <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold {{ $aula->status_aktif ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">{{ $aula->status_aktif ? '● Aktif' : '● Tidak aktif' }}</span>
-            @if($isAdmin)<a href="{{ route('admin.aula.edit', $aula->id) }}" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition">Edit aula</a>@endif
+            @if($canManageAula)<a href="{{ route('admin.aula.edit', $aula->id) }}" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition">Edit aula</a>@endif
         </div>
     </div>
     <div class="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">

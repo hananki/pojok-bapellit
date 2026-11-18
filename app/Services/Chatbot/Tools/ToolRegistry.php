@@ -19,12 +19,14 @@ class ToolRegistry
         AbsensiTools $absensi,
         SuratTools $surat,
         AbsensiHistoryTools $absensiHistory,
+        UserManagementTools $userManagement,
     ) {
         $this->groups = [
             $booking,
             $absensi,
             $surat,
             $absensiHistory,
+            $userManagement,
         ];
     }
 

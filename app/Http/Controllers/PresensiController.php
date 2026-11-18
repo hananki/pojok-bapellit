@@ -66,10 +66,17 @@ class PresensiController extends Controller
             ->whereHas('sesi')
             ->get()
             ->map(fn ($r) => [
-                'id'     => $r->id,
-                'nama'   => $r->sesi->nama_sesi,
-                'tgl'    => $r->sesi->tanggal->format('Y-m-d'),
-                'status' => $r->status_kehadiran,
+                'id'          => $r->id,
+                'nama'        => $r->sesi->nama_sesi,
+                'tgl'         => $r->sesi->tanggal->format('Y-m-d'),
+                // [FIX] Tambahan agar pop-up modal bisa menampilkan data lengkap
+                'tanggal_fmt' => $r->sesi->tanggal->translatedFormat('d M Y'),
+                'waktu'       => $r->waktu_absen
+                    ? \Carbon\Carbon::parse($r->waktu_absen)->format('H:i')
+                    : null,
+                'keterangan'  => $r->keterangan,
+                // ------------------------------------------------------------------
+                'status'      => $r->status_kehadiran,
             ]);
 
         // Data untuk tabel client-side (semua, tanpa pagination)

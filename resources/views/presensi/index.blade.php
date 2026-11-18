@@ -104,7 +104,7 @@
     }
     .bapelit-hero a.btn-scan-absensi svg { stroke: #1e3a8a; }
 
-    /* ===== KALENDER (WARNA ASLI) ===== */
+    /* ===== KALENDER ===== */
     .kalender-cell {
         min-height: 120px;
     }
@@ -147,9 +147,108 @@
     .table-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     .table-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
     .table-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+    /* ===== RESPONSIVE KALENDER (HP) ===== */
+    @media (max-width: 768px) {
+        .kalender-cell {
+            min-height: 85px; /* Dikecilkan dari 120px */
+            padding: 4px !important;
+        }
+        .kalender-header-hari, .kalender-header-weekend {
+            font-size: 9px !important; /* Huruf header lebih kecil */
+            padding: 8px 2px !important;
+            letter-spacing: 0.02em !important;
+        }
+        .badge-absensi-text {
+            font-size: 9px !important;
+        }
+        .badge-absensi-nama {
+            display: none !important; /* Sembunyikan nama sesi di HP */
+        }
+    }
 </style>
 
-<div x-data="presensiApp()" class="pb-10 bg-slate-50 min-h-screen">
+<div x-data="presensiApp()" class="pb-10 bg-slate-50 min-h-screen relative">
+
+    {{-- ===== MODAL POP-UP DETAIL ===== --}}
+    <div x-show="showModal" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        
+        {{-- Card Modal --}}
+        <div @click.away="showModal = false"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+            
+            {{-- Header Modal --}}
+            <div :class="{
+                    'bg-green-600': selectedAbsen?.status === 'hadir',
+                    'bg-red-600': selectedAbsen?.status === 'tidak',
+                    'bg-gray-500': !selectedAbsen?.status
+                 }"
+                 class="px-5 py-4 text-white relative">
+                <h3 class="font-bold text-lg" x-text="selectedAbsen?.nama || 'Detail Absensi'"></h3>
+                <p class="text-xs text-white/80 mt-1" x-text="selectedAbsen?.tanggal_fmt || ''"></p>
+                
+                {{-- Tombol Close X --}}
+                <button @click="showModal = false" class="absolute top-4 right-4 text-white/80 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            {{-- Body Modal --}}
+            <div class="p-5 space-y-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status Kehadiran</p>
+                        <span :class="{
+                                'bg-green-100 text-green-800 border-green-200': selectedAbsen?.status === 'hadir',
+                                'bg-red-100 text-red-800 border-red-200': selectedAbsen?.status === 'tidak',
+                                'bg-gray-100 text-gray-800 border-gray-200': !selectedAbsen?.status
+                              }"
+                              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold border">
+                            <span :class="{
+                                    'bg-green-500': selectedAbsen?.status === 'hadir',
+                                    'bg-red-500': selectedAbsen?.status === 'tidak',
+                                    'bg-gray-500': !selectedAbsen?.status
+                                  }" class="w-2 h-2 rounded-full"></span>
+                            <span x-text="selectedAbsen?.status === 'hadir' ? 'Hadir' : (selectedAbsen?.status === 'tidak' ? 'Tidak Hadir' : 'Belum Diabsen')"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Tanggal</p>
+                        <p class="text-sm font-medium text-gray-900" x-text="selectedAbsen?.tanggal_fmt || selectedAbsen?.tgl || '-'"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Waktu</p>
+                        <p class="text-sm font-medium text-gray-900" x-text="selectedAbsen?.waktu || '-'"></p>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-gray-100">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Keterangan</p>
+                    <p class="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100" x-text="selectedAbsen?.keterangan || 'Tidak ada keterangan tambahan.'"></p>
+                </div>
+            </div>
+
+            {{-- Footer Modal --}}
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <button @click="showModal = false" class="px-5 py-2 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 
     {{-- ===== HERO ===== --}}
     <div class="bapelit-hero text-white px-4 sm:px-8 pt-8 pb-8 rounded-b-3xl shadow-xl">
@@ -291,24 +390,24 @@
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 translate-y-4"
              x-transition:enter-end="opacity-100 translate-y-0"
-             class="bg-white border border-t-0 border-gray-200 rounded-b-2xl shadow-sm p-4 sm:p-6">
+             class="bg-white border border-t-0 border-gray-200 rounded-b-2xl shadow-sm p-2 sm:p-6">
 
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-extrabold text-gray-900" x-text="judulBulan()"></h2>
-                <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+                <h2 class="text-lg sm:text-xl font-extrabold text-gray-900" x-text="judulBulan()"></h2>
+                <div class="flex gap-2 w-full sm:w-auto">
                     <button @click="prevBulan()"
-                            class="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-700
+                            class="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700
                                    bg-gray-100 hover:bg-gray-200 rounded-xl transition active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
                         </svg>
                         Sebelum
                     </button>
                     <button @click="nextBulan()"
-                            class="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-700
+                            class="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700
                                    bg-gray-100 hover:bg-gray-200 rounded-xl transition active:scale-95">
                         Berikut
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
                         </svg>
                     </button>
@@ -317,15 +416,14 @@
 
             {{-- Grid kalender: 7 kolom, header hardcode --}}
             <div class="grid grid-cols-7 border-l border-t border-gray-200 rounded-xl overflow-hidden">
-
-                {{-- Header 7 hari (Warna Asli) --}}
-                <div class="kalender-header-hari">SENIN</div>
-                <div class="kalender-header-hari">SELASA</div>
-                <div class="kalender-header-hari">RABU</div>
-                <div class="kalender-header-hari">KAMIS</div>
-                <div class="kalender-header-hari">JUMAT</div>
-                <div class="kalender-header-weekend">SABTU</div>
-                <div class="kalender-header-weekend">MINGGU</div>
+                {{-- Header 7 hari --}}
+                <div class="kalender-header-hari">SEN</div>
+                <div class="kalender-header-hari">SEL</div>
+                <div class="kalender-header-hari">RAB</div>
+                <div class="kalender-header-hari">KAM</div>
+                <div class="kalender-header-hari">JUM</div>
+                <div class="kalender-header-weekend">SAB</div>
+                <div class="kalender-header-weekend">MIN</div>
 
                 {{-- Sel kosong offset awal --}}
                 <template x-for="n in offsetAwal()" :key="'e'+n">
@@ -335,40 +433,42 @@
                 {{-- Sel tanggal --}}
                 <template x-for="tgl in jumlahHari()" :key="'d'+tgl">
                     <div :class="isHariIni(tgl) ? 'bg-blue-50' : 'bg-white hover:bg-slate-50'"
-                         class="kalender-cell border-r border-b border-gray-200 p-2 sm:p-2.5 flex flex-col gap-1.5 transition-colors">
+                         class="kalender-cell border-r border-b border-gray-200 p-1 sm:p-2.5 flex flex-col gap-1 sm:gap-1.5 transition-colors">
+                        
                         <div class="flex justify-end">
-                            {{-- Lingkaran tanggal hari ini warna asli biru tua --}}
                             <span :class="isHariIni(tgl)
-                                    ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-extrabold bg-blue-900 text-white shadow'
-                                    : 'w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-xs sm:text-sm font-semibold text-gray-500'"
+                                    ? 'w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-extrabold bg-blue-900 text-white shadow'
+                                    : 'w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center text-[10px] sm:text-xs font-semibold text-gray-500'"
                                   x-text="tgl"></span>
                         </div>
+
                         <template x-for="item in getAbsensi(tgl)" :key="item.id">
-                            {{-- Badge absensi warna asli (solid green/red/gray) --}}
-                            <div :class="{
-                                    'bg-green-600 text-white': item.status === 'hadir',
-                                    'bg-red-600 text-white':   item.status === 'tidak',
-                                    'bg-gray-400 text-white':  !item.status
+                            {{-- Klik badge untuk lihat detail --}}
+                            <div @click="openModal(item)" 
+                                 :class="{
+                                    'bg-green-600 text-white hover:bg-green-700': item.status === 'hadir',
+                                    'bg-red-600 text-white hover:bg-red-700':   item.status === 'tidak',
+                                    'bg-gray-400 text-white hover:bg-gray-500':  !item.status
                                  }"
-                                 class="rounded-lg px-2 py-1.5 text-[10px] sm:text-xs font-semibold shadow-sm flex flex-col leading-snug"
+                                 class="rounded-md sm:rounded-lg px-1 py-1 sm:px-2 sm:py-1.5 text-[9px] sm:text-[11px] font-semibold shadow-sm flex flex-col leading-tight sm:leading-snug cursor-pointer transition-colors"
                                  :title="item.nama">
-                                <span x-text="item.status === 'hadir' ? '✓ Hadir' : (item.status === 'tidak' ? '✗ Tidak Hadir' : '○ Belum Diabsen')"></span>
-                                <span class="opacity-80 truncate mt-0.5" x-text="item.nama"></span>
+                                <span class="badge-absensi-text" x-text="item.status === 'hadir' ? '✓' : (item.status === 'tidak' ? '✗' : '○')"></span>
+                                <span class="badge-absensi-nama opacity-80 truncate mt-0.5" x-text="item.nama"></span>
                             </div>
                         </template>
                     </div>
                 </template>
             </div>
 
-            <div class="flex flex-wrap gap-5 mt-5 pt-4 border-t border-gray-100">
-                <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
-                    <span class="w-4 h-4 rounded-md bg-green-600"></span> Hadir
+            <div class="flex flex-wrap gap-3 sm:gap-5 mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-gray-100">
+                <div class="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm font-semibold text-gray-600">
+                    <span class="w-3 h-3 sm:w-4 sm:h-4 rounded bg-green-600"></span> Hadir
                 </div>
-                <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
-                    <span class="w-4 h-4 rounded-md bg-red-600"></span> Tidak Hadir
+                <div class="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm font-semibold text-gray-600">
+                    <span class="w-3 h-3 sm:w-4 sm:h-4 rounded bg-red-600"></span> Tidak Hadir
                 </div>
-                <div class="flex items-center gap-2 text-sm font-semibold text-gray-600">
-                    <span class="w-4 h-4 rounded-md bg-gray-400"></span> Belum Diabsen
+                <div class="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-sm font-semibold text-gray-600">
+                    <span class="w-3 h-3 sm:w-4 sm:h-4 rounded bg-gray-400"></span> Belum Diabsen
                 </div>
             </div>
         </div>
@@ -394,7 +494,6 @@
 
             <div class="hidden md:block overflow-x-auto table-scroll">
                 <table class="w-full text-left">
-                    {{-- Kembalikan warna header biru tua seperti aslinya --}}
                     <thead class="bg-blue-900 text-white">
                         <tr>
                             <th class="px-5 py-4 text-xs font-bold uppercase tracking-wider w-12">No</th>
@@ -414,8 +513,8 @@
                             </tr>
                         </template>
                         <template x-for="(r, i) in filteredRiwayat()" :key="r.id">
-                            {{-- Animasi list dengan delay dinamis --}}
-                            <tr class="hover:bg-blue-50/40 transition-colors duration-200 animate-list-in" 
+                            <tr class="hover:bg-blue-50/40 transition-colors duration-200 animate-list-in cursor-pointer" 
+                                @click="openModal(r)"
                                 :style="`animation-delay: ${i * 50}ms`">
                                 
                                 <td class="px-5 py-4 text-sm text-gray-500 font-medium" x-text="i + 1"></td>
@@ -452,8 +551,8 @@
                     <div class="py-12 text-center text-gray-400 text-sm">Tidak ada data yang cocok.</div>
                 </template>
                 <template x-for="(r, i) in filteredRiwayat()" :key="r.id">
-                    {{-- Animasi mobile --}}
-                    <div class="p-4 hover:bg-blue-50/30 transition-colors animate-list-in"
+                    <div class="p-4 hover:bg-blue-50/30 transition-colors animate-list-in cursor-pointer"
+                         @click="openModal(r)"
                          :style="`animation-delay: ${i * 50}ms`">
                         <div class="flex items-start gap-3">
                             <div class="w-8 h-8 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -482,9 +581,6 @@
                                         <span x-text="r.status === 'hadir' ? 'Hadir' : (r.status === 'tidak' ? 'Tidak Hadir' : 'Belum Diabsen')"></span>
                                     </span>
                                 </div>
-                                <template x-if="r.keterangan">
-                                    <div class="mt-1.5 text-xs text-gray-500 bg-gray-50 rounded-lg p-2 border border-gray-100" x-text="r.keterangan"></div>
-                                </template>
                             </div>
                         </div>
                     </div>
@@ -506,6 +602,32 @@ function presensiApp() {
         view: 'tabel',
         search: '',
         filterStatus: '',
+        
+        // State untuk Modal
+        showModal: false,
+        selectedAbsen: null,
+
+        // [FIX] Ubah logika openModal agar format tanggal otomatis rapi
+        openModal(data) {
+            // 1. Olah Tanggal: Jika dari kalender (tgl) formatnya Y-m-d. Jika dari tabel, sudah rapi.
+            let tglTampil = data.tanggal_fmt || data.tgl || '-';
+            if (!data.tanggal_fmt && data.tgl) {
+                // Ubah YYYY-MM-DD jadi DD MMM YYYY (contoh: 2026-10-07 -> 07 Okt 2026)
+                const d = new Date(data.tgl);
+                tglTampil = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+
+            // 2. Olah Waktu: Pastikan waktu tidak undefined
+            let waktuTampil = data.waktu ? data.waktu + ' WIB' : '-';
+
+            this.selectedAbsen = {
+                ...data,
+                tanggal_fmt: tglTampil,
+                waktu: waktuTampil
+            };
+            
+            this.showModal = true;
+        },
 
         filteredRiwayat() {
             return tabelData.filter(r => {

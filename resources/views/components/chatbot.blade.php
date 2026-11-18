@@ -261,21 +261,21 @@
     .chatbot-quick-btn:active { transform: scale(0.98); }
     .chatbot-quick-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-        /* ═══════════════════════════════════════════════════════════ */
-    /* HEADER BUTTONS (Diperbesar & Dibuat Bold)                     */
+    /* ═══════════════════════════════════════════════════════════ */
+    /* HEADER BUTTONS                                                */
     /* ═══════════════════════════════════════════════════════════ */
     .chatbot-header-btn {
         display: flex;
-        height: 36px; /* Diperbesar dari 30px */
-        width: 36px;  /* Diperbesar dari 30px */
+        height: 36px;
+        width: 36px;
         align-items: center;
         justify-content: center;
         border-radius: 8px;
         color: var(--cb-text-muted);
         transition: all 0.15s;
         cursor: pointer;
-        background: var(--cb-surface-hover); /* Kasih background abu halus */
-        border: 1px solid var(--cb-border);  /* Kasih border tipis */
+        background: var(--cb-surface-hover);
+        border: 1px solid var(--cb-border);
         padding: 0;
     }
     .chatbot-header-btn:hover {
@@ -285,9 +285,9 @@
     }
     .chatbot-header-btn:active { transform: scale(0.9); }
     .chatbot-header-btn svg { 
-        width: 18px; /* Icon diperbesar */
+        width: 18px;
         height: 18px; 
-        stroke-width: 2.5; /* Garis icon dipertebal */
+        stroke-width: 2.5;
     }
 
     #chatbot-resize-handle {
@@ -326,11 +326,10 @@
         box-shadow: 0 8px 24px -4px var(--cb-accent-ring),
                     0 4px 12px -4px rgba(0, 0, 0, 0.15) !important;
         padding: 0 !important;
-        overflow: visible; /* biar efek pulse ring ga kepotong */
+        overflow: visible;
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
-    /* Efek Pulse Ring (Gelombang) */
     #chatbot-toggle::before,
     #chatbot-toggle::after {
         content: '';
@@ -354,10 +353,9 @@
     #chatbot-toggle:hover {
         background: var(--cb-accent-hover) !important;
         box-shadow: 0 12px 28px -4px var(--cb-accent-ring) !important;
-        transform: scale(1.1) rotate(5deg); /* Efek goyang dikit */
+        transform: scale(1.1) rotate(5deg);
     }
     
-    /* Gambar Logo di dalam toggle */
     #chatbot-toggle img {
         width: 62%;
         height: 62%;
@@ -481,7 +479,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════════ */
-    /* INPUT AREA                                                    */
+    /* INPUT AREA & COOLDOWN BAR                                     */
     /* ═══════════════════════════════════════════════════════════ */
     .chatbot-input-wrapper {
         background: var(--cb-surface);
@@ -490,6 +488,7 @@
         display: flex;
         align-items: flex-end;
         gap: 0.5rem;
+        position: relative; /* Penting buat posisi progress bar */
     }
     .chatbot-input-box {
         flex: 1;
@@ -545,6 +544,41 @@
     #chatbot-send svg { width: 18px; height: 18px; }
 
     #chatbot-typing .chatbot-bubble-bot { padding: 0.75rem 1rem; }
+
+    /* UI Cooldown Baru */
+    .chatbot-cooldown-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: transparent;
+        overflow: hidden;
+        border-bottom-left-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+        display: none; /* Disembunyiin dulu */
+    }
+    .chatbot-cooldown-container.active {
+        display: block;
+    }
+    .chatbot-cooldown-bar {
+        height: 100%;
+        background: #ef4444; /* Warna merah */
+        width: 100%;
+        transition: width 1s linear;
+    }
+    .chatbot-cooldown-text {
+        position: absolute;
+        right: 1rem;
+        bottom: 0.5rem;
+        font-size: 10px;
+        font-weight: 600;
+        color: #ef4444;
+        display: none;
+    }
+    .chatbot-cooldown-text.active {
+        display: block;
+    }
 
     /* ═══════════════════════════════════════════════════════════ */
     /* RESPONSIF HP                                                  */
@@ -649,7 +683,7 @@
 
         {{-- Input --}}
         <form id="chatbot-form" class="chatbot-input-wrapper">
-            <div class="chatbot-input-box">
+            <div class="chatbot-input-box relative">
                 <textarea id="chatbot-input"
                           rows="1"
                           placeholder="Tanya apa saja..."
@@ -660,6 +694,12 @@
                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
             </button>
+
+            {{-- Progress Bar Cooldown (UI Baru) --}}
+            <div id="chatbot-cooldown-container" class="chatbot-cooldown-container">
+                <div id="chatbot-cooldown-bar" class="chatbot-cooldown-bar"></div>
+            </div>
+            <span id="chatbot-cooldown-text" class="chatbot-cooldown-text"></span>
         </form>
 
         <div id="chatbot-resize-handle" title="Tarik untuk ubah ukuran"></div>
@@ -696,6 +736,11 @@
         const iconExpand   = document.getElementById('chatbot-icon-expand');
         const iconMinimize = document.getElementById('chatbot-icon-minimize');
 
+        // Elemen UI Cooldown Baru
+        const cooldownContainer = document.getElementById('chatbot-cooldown-container');
+        const cooldownBar       = document.getElementById('chatbot-cooldown-bar');
+        const cooldownText      = document.getElementById('chatbot-cooldown-text');
+
         if (!toggle || !bubble) return;
 
         const chatUrl     = '{{ route('chatbot.chat') }}';
@@ -711,6 +756,12 @@
 
         let menusLoaded  = false;
         let isFullscreen = false;
+        
+        // State Cooldown
+        let cooldownUntil = 0;
+        let cooldownTimer = null;
+        let isProcessing = false;
+
         const CHAT_STORAGE_KEY = 'pojok_bapelit_chatbot_history';
         const CHAT_HISTORY_TTL = 24 * 60 * 60 * 1000;
         const isMobile   = () => window.matchMedia('(max-width: 640px)').matches;
@@ -740,7 +791,6 @@
                     return;
                 }
 
-                // Saat restore history, langsung tampilkan tanpa animasi ketik
                 saved.history.forEach((message) => addMessage(message.text, message.isUser, message.time, false, true));
                 messages.scrollTop = messages.scrollHeight;
             } catch (error) {
@@ -918,6 +968,45 @@
         }
 
         // ═══════════════════════════════════════════════════════
+        // FUNGSI COUNTDOWN VISUAL (PROGRESS BAR)
+        // ═══════════════════════════════════════════════════════
+        function startVisualCooldown(seconds) {
+            cooldownUntil = Date.now() + (seconds * 1000);
+            
+            if (cooldownTimer) clearInterval(cooldownTimer);
+            
+            cooldownContainer.classList.add('active');
+            cooldownText.classList.add('active');
+            
+            // Set full width di awal
+            cooldownBar.style.transition = 'none';
+            cooldownBar.style.width = '100%';
+            cooldownText.textContent = `${seconds} detik`;
+
+            // Kasih delay dikit biar transisi width-nya jalan
+            setTimeout(() => {
+                cooldownBar.style.transition = `width ${seconds}s linear`;
+                cooldownBar.style.width = '0%';
+            }, 50);
+
+            // Update teks tiap detik
+            cooldownTimer = setInterval(() => {
+                const sisa = Math.ceil((cooldownUntil - Date.now()) / 1000);
+                
+                if (sisa > 0) {
+                    cooldownText.textContent = `${sisa} detik`;
+                } else {
+                    // Selesai
+                    clearInterval(cooldownTimer);
+                    cooldownContainer.classList.remove('active');
+                    cooldownText.classList.remove('active');
+                    cooldownUntil = 0;
+                    input.placeholder = 'Tanya apa saja...';
+                }
+            }, 1000);
+        }
+
+        // ═══════════════════════════════════════════════════════
         // INPUT
         // ═══════════════════════════════════════════════════════
         input.addEventListener('input', function () {
@@ -928,7 +1017,7 @@
         input.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                form.requestSubmit();
+                if (!input.disabled) form.requestSubmit();
             }
         });
 
@@ -987,21 +1076,17 @@
             let i = 0;
             element.textContent = '';
             
-            // Buat elemen kursor
             const cursor = document.createElement('span');
             cursor.className = 'chatbot-typewriter-cursor';
             element.appendChild(cursor);
 
             function type() {
                 if (i < text.length) {
-                    // Sisipkan huruf sebelum kursor
                     cursor.insertAdjacentText('beforebegin', text.charAt(i));
                     i++;
-                    // Auto scroll
                     messages.scrollTop = messages.scrollHeight;
                     setTimeout(type, speed);
                 } else {
-                    // Selesai: hapus kursor & panggil callback
                     cursor.remove();
                     if (callback) callback();
                 }
@@ -1012,8 +1097,7 @@
         // ═══════════════════════════════════════════════════════
         // RENDER BUBBLE PESAN
         // ═══════════════════════════════════════════════════════
-        // isInstant = true untuk history (tanpa animasi ketik)
-        function addMessage(text, isUser, time = nowTime(), persist = true, isInstant = false) {
+        function addMessage(text, isUser, time = nowTime(), persist = true, isInstant = false, callback = null) {
             const row = document.createElement('div');
             row.className = isUser ? 'chatbot-row-user' : 'chatbot-row-bot';
             row.dataset.chatMessage = '1';
@@ -1043,20 +1127,20 @@
                 </svg>`;
             copyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                copyToClipboard(text, copyBtn); // Copy text asli
+                copyToClipboard(text, copyBtn);
             });
             b.appendChild(copyBtn);
 
             const textEl = document.createElement('div');
             textEl.className = 'chatbot-text';
             
-            // Logic: Jika dari Bot & bukan instant, pakai Typewriter
             if (!isUser && !isInstant) {
                 b.appendChild(textEl);
-                typeWriter(textEl, text, 15);
+                typeWriter(textEl, text, 15, callback);
             } else {
                 textEl.textContent = text;
                 b.appendChild(textEl);
+                if (callback) callback();
             }
 
             const meta = document.createElement('div');
@@ -1216,14 +1300,27 @@
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
             const message = input.value.trim();
-            if (!message) return;
+            
+            // Cegah submit kosong atau kalau sedang proses
+            if (!message || isProcessing) return;
+
+            // Cek apakah masih dalam masa cooldown
+            if (Date.now() < cooldownUntil) {
+                const sisa = Math.ceil((cooldownUntil - Date.now()) / 1000);
+                addMessage(`Sabar ya, AI-nya masih istirahat. Tunggu ${sisa} detik lagi sebelum kirim.`, false);
+                return; 
+            }
 
             document.getElementById('chatbot-quick-menu')?.remove();
 
             addMessage(message, true);
             input.value = '';
             input.style.height = 'auto';
+            
+            // KUNCI INPUT SELAMA PROSES API
+            isProcessing = true;
             sendBtn.disabled = true;
+            input.disabled = true; 
             addTyping();
 
             try {
@@ -1238,15 +1335,48 @@
                 });
                 const data = await res.json();
                 removeTyping();
-                // Parameter ke-4 = persist, ke-5 = isInstant (false agar bot pakai animasi ngetik)
-                addMessage(res.ok ? (data.reply || 'Maaf, saya tidak mengerti.') : ('⚠️ ' + (data.error || 'Gagal menghubungi AI')), false);
+
+                if (data.source === 'rate_limited' || data.source === 'cooldown' || res.status === 429) {
+                    
+                    // [FIX] Ambil angka dari teks backend (misal "Coba lagi dalam 9 detik ya")
+                    let sisaDetik = 15; 
+                    const match = (data.reply || '').match(/(\d+)\s*detik/i);
+                    if (match && match[1]) {
+                        sisaDetik = parseInt(match[1], 10);
+                    }
+
+                    // Panggil progress bar visual dengan sisaDetik
+                    startVisualCooldown(sisaDetik);
+
+                    addMessage(data.reply || data.error || 'AI sedang kena batas. Tunggu bentar ya.', false, nowTime(), true, false, () => {
+                        isProcessing = false;
+                        input.disabled = false;
+                        input.placeholder = 'Bisa ngetik, tapi tunggu cooldown buat kirim...';
+                        sendBtn.disabled = false; 
+                        input.focus();
+                    });
+                    
+                } else {
+                    const reply = res.ok ? (data.reply || 'Maaf, saya tidak mengerti.') : ('⚠️ ' + (data.error || 'Gagal menghubungi AI'));
+                    
+                    addMessage(reply, false, nowTime(), true, false, () => {
+                        isProcessing = false;
+                        input.disabled = false;
+                        input.placeholder = 'Tanya apa saja...';
+                        sendBtn.disabled = false;
+                        input.focus();
+                    });
+                }
             } catch (err) {
                 removeTyping();
-                addMessage('⚠️ Koneksi gagal. Coba lagi.', false);
+                addMessage('⚠️ Koneksi gagal. Coba lagi.', false, nowTime(), true, false, () => {
+                    isProcessing = false;
+                    input.disabled = false;
+                    sendBtn.disabled = false;
+                    input.focus();
+                });
                 console.error('[Chatbot]', err);
             } finally {
-                sendBtn.disabled = false;
-                input.focus();
                 showMenusAgain(400);
             }
         });

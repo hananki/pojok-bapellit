@@ -186,6 +186,17 @@
                                             </svg>
                                             Kelola Booking
                                         </a>
+
+                                        <a href="{{ route('admin.aula.index') }}"
+                                           class="group flex items-center gap-3 px-4 py-2.5 text-sm border-l-2 transition-all
+                                                  {{ request()->routeIs('admin.aula.*')
+                                                      ? 'bg-teal-50 text-teal-600 border-teal-600 font-semibold'
+                                                      : 'text-gray-700 border-transparent hover:bg-teal-50 hover:text-teal-600 hover:border-teal-600' }}">
+                                            <svg class="w-4 h-4 transition-colors {{ request()->routeIs('admin.aula.*') ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                            Kelola Aula
+                                        </a>
                                     @endif
 
                                     {{-- MENU PENGELOLA ABSENSI --}}
@@ -204,17 +215,6 @@
 
                                     {{-- MENU MASTER (HANYA ADMIN) --}}
                                     @if($isAdmin)
-                                        <a href="{{ route('admin.aula.index') }}"
-                                           class="group flex items-center gap-3 px-4 py-2.5 text-sm border-l-2 transition-all
-                                                  {{ request()->routeIs('admin.aula.*')
-                                                      ? 'bg-teal-50 text-teal-600 border-teal-600 font-semibold'
-                                                      : 'text-gray-700 border-transparent hover:bg-teal-50 hover:text-teal-600 hover:border-teal-600' }}">
-                                            <svg class="w-4 h-4 transition-colors {{ request()->routeIs('admin.aula.*') ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                            </svg>
-                                            Kelola Aula
-                                        </a>
-
                                         <a href="{{ route('admin.kelolaakun.index') }}"
                                            class="group flex items-center gap-3 px-4 py-2.5 text-sm border-l-2 transition-all
                                                   {{ request()->routeIs('admin.kelolaakun.*')

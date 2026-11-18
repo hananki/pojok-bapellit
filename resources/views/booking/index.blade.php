@@ -3,6 +3,7 @@
     $user = Auth::user();
 
     $isAdmin = $user?->isAdmin() ?? false;
+    $canManageAula = $user && ($user->isAdmin() || $user->role === 'pengelola_aula');
     $layout = $isAdmin ? 'layouts.admin' : 'layouts.user';
 @endphp
 
@@ -757,7 +758,7 @@
                         <h3 class="text-2xl font-bold text-gray-700 mb-2">Belum Ada Aula Tersedia</h3>
                         <p class="text-gray-500 text-sm mb-6">Silahkan hubungi admin untuk menambahkan aula.</p>
 
-                        @if($isAdmin)
+                        @if($canManageAula)
                             <a href="{{ route('admin.aula.create') }}"
                                class="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition">
                                 Tambah Aula Sekarang
